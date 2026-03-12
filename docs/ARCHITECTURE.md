@@ -294,3 +294,61 @@ Refresh-StockData
 - Minimal memory footprint
 - Background processing
 - Configurable intervals
+
+## Server-Side Architecture
+
+### Overview
+
+The server-side features build on Supabase Self-Hosted:
+
+```
+Client ←→ Supabase Backend ←→ Edge Functions
+                    ↓
+              PostgreSQL
+              Realtime
+              Storage
+```
+
+### Phase 4: Plugin & Marketplace
+
+#### Plugin API
+- `plugin_registry` table - Plugin metadata
+- `plugin_versions` table - Version history
+- `user_plugins` table - User installations
+- Edge Functions: get-plugins, submit-plugin, rate-plugin
+
+#### Marketplace
+- `marketplace_ratings` table - Reviews
+- `featured_items` table - Featured content
+- Edge Functions: search-plugins, get-featured, download-plugin
+
+### Phase 5: Multiplayer & Streamer
+
+#### Multiplayer
+- `multiplayer_friends` table - Friend connections
+- `multiplayer_messages` table - Messages
+- `active_sessions` table - Online status
+- Supabase Realtime - Live updates
+
+#### Streamer
+- `streamer_config` table - User settings
+- `stream_events` table - Event history
+- `streamer_commands` table - Custom commands
+- Edge Functions: webhook-twitch, webhook-youtube
+
+### API Endpoints Summary
+
+| Feature | REST | Edge Functions |
+|---------|------|----------------|
+| Plugins | CRUD | get-plugins, submit-plugin |
+| Marketplace | GET | search, featured, download |
+| Multiplayer | CRUD | register-player, send-message |
+| Streamer | CRUD | configure, webhook-twitch, webhook-youtube |
+
+### Documentation
+
+See individual docs:
+- [SERVER-PLUGIN-API.md](./SERVER-PLUGIN-API.md)
+- [SERVER-MARKETPLACE.md](./SERVER-MARKETPLACE.md)
+- [SERVER-MULTIPLAYER.md](./SERVER-MULTIPLAYER.md)
+- [SERVER-STREAMER.md](./SERVER-STREAMER.md)

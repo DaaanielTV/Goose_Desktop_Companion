@@ -76,6 +76,34 @@ A lightweight, feature-rich desktop companion that brings a playful goose to you
 
 ---
 
+## ☁️ Server-Side Features (Optional)
+
+Desktop Goose kann mit einem Self-Hosted Supabase Backend erweitert werden:
+
+### Phase 4: Plugin & Marketplace
+- **Plugin Registry API** - Verwalte Plugins zentral
+- **Marketplace Backend** - Lade Skins, Plugins, Themes herunter
+- **User Content** - Teile eigene Kreationen
+
+### Phase 5: Multiplayer & Streamer
+- **Multiplayer Server** - Besuche Freunde, Nachrichten, Duelle
+- **Realtime Sync** - Echtzeit-Kommunikation
+- **Streamer Integration** - Twitch/YouTube Webhooks
+- **Chaos Events** - Streamer-Chaos auslösen
+
+### Dokumentation
+
+| Dokument | Beschreibung |
+|----------|-------------|
+| [docs/SERVER-FEATURES.md](docs/SERVER-FEATURES.md) | Server-Übersicht |
+| [docs/SERVER-PLUGIN-API.md](docs/SERVER-PLUGIN-API.md) | Plugin API Server |
+| [docs/SERVER-MARKETPLACE.md](docs/SERVER-MARKETPLACE.md) | Marketplace Backend |
+| [docs/SERVER-MULTIPLAYER.md](docs/SERVER-MULTIPLAYER.md) | Multiplayer Server |
+| [docs/SERVER-STREAMER.md](docs/SERVER-STREAMER.md) | Streamer Integration |
+| [docs/backend-setup.md](docs/backend-setup.md) | Backend Setup |
+
+---
+
 ## 📋 System Requirements
 
 - Windows operating system
@@ -344,7 +372,13 @@ DesktopGoose/
 │   ├── ROADMAP.md         # Project roadmap
 │   ├── PLUGIN-API.md      # Plugin development
 │   ├── MODULES.md         # Module reference
-│   └── ARCHITECTURE.md    # Architecture
+│   ├── ARCHITECTURE.md    # Architecture
+│   ├── SERVER-FEATURES.md # Server overview
+│   ├── SERVER-PLUGIN-API.md   # Plugin API Server
+│   ├── SERVER-MARKETPLACE.md  # Marketplace Backend
+│   ├── SERVER-MULTIPLAYER.md  # Multiplayer Server
+│   ├── SERVER-STREAMER.md     # Streamer Integration
+│   └── backend-setup.md    # Backend setup
 ├── config.ini               # Configuration
 ├── goose.vbs               # Silent launch
 ├── run-all.ps1            # Run all modules
