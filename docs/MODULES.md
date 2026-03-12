@@ -71,11 +71,12 @@
 | `Fun/Eastereggs.ps1` | Hidden easter eggs |
 | `Fun/Skins.ps1` | Skin management |
 | `Fun/Mood.ps1` | User mood tracking |
-| `Fun/SystemMood.ps1` | **NEW** System-triggered mood (CPU, music, idle) |
-| `Fun/AppReactions.ps1` | **NEW** App-specific goose reactions |
-| `Fun/MiniGames.ps1` | Mini games |
+| `Fun/SystemMood.ps1` | System-triggered mood (CPU, music, idle) |
+| `Fun/AppReactions.ps1` | App-specific goose reactions |
+| `Fun/MiniGames.ps1` | Mini games (base set) |
+| `Fun/GamesExtended.ps1` | **NEW** Extended games (Chase, Heist, Dodge) |
 | `Fun/ARMode.ps1` | Camera-based AR mode |
-| `Fun/CodeAssistant.ps1` | **NEW** AI code review and assistance |
+| `Fun/CodeAssistant.ps1` | AI code review and assistance |
 
 ## Health
 
@@ -103,12 +104,12 @@
 |--------|-------------|
 | `Social/Gamification.ps1` | Gamification elements |
 | `Social/MultiPet.ps1` | Multiple pets (legacy) |
-| `Social/GooseMultiGoose.ps1` | **NEW** Multi-Goose with personalities |
+| `Social/GooseMultiGoose.ps1` | Multi-Goose with personalities |
+| `Social/GooseRPG.ps1` | **NEW** RPG progression system with stats & achievements |
 | `Social/Leaderboard.ps1` | Leaderboard |
 | `Social/Kindness.ps1` | Kindness actions |
 | `Social/Inspiration.ps1` | Inspiration quotes |
 | `Social/PetInteractions.ps1` | Interactive pet features |
-| `Social/GooseRPG.ps1` | **NEW** RPG progression system |
 | `Social/Multiplayer.ps1` | **NEW** Multiplayer goose features |
 
 ## Media
