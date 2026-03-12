@@ -1,0 +1,3 @@
+@echo off
+echo Starting Desktop Goose UI...
+powershell -ExecutionPolicy Bypass -WindowStyle Hidden -File "%~dp0goose-ui.ps1"
