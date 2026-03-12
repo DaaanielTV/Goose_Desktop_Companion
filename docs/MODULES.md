@@ -27,8 +27,9 @@
 | `Productivity/Pomodoro.ps1` | Pomodoro timer |
 | `Productivity/TimeTracking.ps1` | Time tracking |
 | `Productivity/TimeBlock.ps1` | Time blocking with weekly view and templates |
-| `Productivity/TaskIntegration.ps1` | External task provider sync (Todoist, Microsoft To-Do, Google Tasks) |
-| `Productivity/AIAssistant.ps1` | Local AI assistant with quick actions |
+| `Productivity/TaskIntegration.ps1` | External task provider sync |
+| `Productivity/AIAssistant.ps1` | AI assistant with quick actions |
+| `Productivity/AIChat.ps1` | **NEW** Chat with the goose (LLM + personality) |
 
 ## System
 
