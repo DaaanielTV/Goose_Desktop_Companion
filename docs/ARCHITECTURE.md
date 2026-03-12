@@ -58,65 +58,88 @@ The core system combines 5 subsystems:
 
 ## New Features Architecture
 
-### Phase 1: Widgets & Wellness
+### Phase 1: Fun Interaction
 
-#### Stock Ticker (Widgets/goose-stockticker.ps1)
-- Yahoo Finance API integration
-- Real-time price updates
-- Configurable refresh interval
+#### Multi-Goose System (Social/goose-multigoose.ps1)
+- Personality types: Hacker, Lazy, Evil, Normal
+- Speech bubble system
+- Inter-goose communication
+- Skin collection
 
-#### Calendar Widget (Widgets/goose-calendar.ps1)
-- Monthly calendar view
-- Event CRUD operations
-- Week number display
+#### Goose Mood System (Fun/goose-mood.ps1)
+- CPU-triggered moods (angry when hot)
+- Music-reactive moods (happy when playing)
+- Idle detection (bored, sleepy)
+- Context-aware mood transitions
 
-#### Clipboard Manager (System/goose-clipboard.ps1)
-- History with 50 item limit
-- Pin important clips
-- Quick paste (keys 1-9)
-- Type categorization
+#### App Reactions (Core/GooseCore.ps1)
+- Window title detection
+- Process monitoring
+- Context-specific behaviors
 
-#### Eye Strain Prevention (Health/goose-eyestrain.ps1)
-- 20-20-20 rule timer
-- Break exercises
-- Daily statistics
+### Phase 2: AI & Smart Features
 
-### Phase 2: Productivity & Organization
-
-#### Time Blocking (Productivity/goose-timeblock.ps1)
-- Weekly calendar view
-- Time block templates
-- Current/upcoming blocks
-
-#### File Organizer (System/goose-fileorganizer.ps1)
-- File type rules
-- Auto-categorization
-- Scheduled runs
-
-#### Posture Checks (Health/goose-posture.ps1)
-- Periodic reminders
-- Exercise suggestions
-- Daily score
-
-### Phase 3: Integration & Automation
-
-#### Task Integration (Productivity/goose-taskintegration.ps1)
-- Todoist API
-- Microsoft To-Do API
-- Google Tasks API
-
-#### AI Assistant (Productivity/goose-aiassistant.ps1)
-- Message processing
-- Quick actions
+#### AI Chat Goose (Productivity/goose-aiassistant.ps1)
+- Local LLM support (Ollama)
+- Personality prompts
+- Sarkastic responses
+- Speech bubble UI
 - Conversation history
 
-#### Automation Hub (System/goose-automation.ps1)
-- Time triggers
-- App launch triggers
-- Clipboard triggers
-- Multiple action types
+#### Code Assistant (Fun/goose-codeassistant.ps1)
+- Code snippet analysis
+- Error explanation
+- Comment generation
+- StackOverflow integration
 
-### Phase 4: Fun & Games
+#### Learning Goose (Health/goose-learning.ps1)
+- Break reminders
+- Programming quizzes
+- Daily streak tracking
+- XP system
+
+### Phase 3: Gamification
+
+#### Mini Games (Fun/goose-minigames.ps1)
+- Whack-a-Goose
+- Memory Match
+- Quiz
+- Word Game
+- Goose Chase (NEW)
+- Icon Heist (NEW)
+
+#### RPG Progression (Social/goose-rpg.ps1)
+- Stats: Mischief, Intelligence, Speed, Chaos
+- Level system
+- Unlockables
+- Skin collection
+
+### Phase 4: Plugin System
+
+#### Plugin API (System/goose-pluginapi.ps1)
+- Plugin structure: manifest.json, main.ps1
+- Hook system: onTick, onAppChange, onIdle, onInteract
+- Plugin API functions
+- Permission system
+
+#### Marketplace
+- Skin marketplace
+- Plugin marketplace
+- Behavior packs
+
+### Phase 5: Advanced Features
+
+#### Multiplayer Goose
+- P2P connections
+- Goose invasions
+- Goose messages
+- Goose duels
+
+#### Streamer Mode
+- Twitch integration
+- Chat controls
+- Donation events
+- Alert reactions
 
 #### Pet Interactions (Social/goose-petinteractions.ps1)
 - Pet/feed/play commands
@@ -167,34 +190,48 @@ PersonalitySystem=True
 ProductivityReminders=False
 ```
 
-### Phase 1: Widgets
+### Phase 1: Fun Interaction
 ```ini
-StockTickerEnabled=False
-StockSymbols=AAPL,GOOGL,MSFT
-CalendarEnabled=False
-ClipboardManagerEnabled=False
-EyeStrainEnabled=False
+# Multi-Goose
+MultiGooseEnabled=False
+MaxGooseCount=3
+
+# Mood System
+MoodSystemEnabled=True
+MoodReactToCPU=True
+MoodReactToMusic=True
+
+# App Reactions
+AppReactionEnabled=False
 ```
 
-### Phase 2: Productivity
+### Phase 2: AI Features
 ```ini
-TimeBlockEnabled=False
-FileOrganizerEnabled=False
-PostureEnabled=False
+AIChatEnabled=False
+AIProvider=ollama
+AIModel=llama2
+
+CodeAssistantEnabled=False
+LearningEnabled=False
 ```
 
-### Phase 3: Integration
+### Phase 3: Gamification
 ```ini
-TaskIntegrationEnabled=False
-AIAssistantEnabled=False
-AutomationEnabled=False
+RPGEnabled=False
+MiniGamesEnabled=True
 ```
 
-### Phase 4: Fun
+### Phase 4: Plugins
 ```ini
-PetInteractionsEnabled=False
-MiniGamesEnabled=False
-ARModeEnabled=False
+PluginAPIEnabled=False
+PluginDirectory=plugins
+MarketplaceEnabled=False
+```
+
+### Phase 5: Advanced
+```ini
+StreamerModeEnabled=False
+MultiplayerEnabled=False
 ```
 
 ## Module Patterns

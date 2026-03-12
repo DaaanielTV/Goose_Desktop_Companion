@@ -6,6 +6,9 @@ A lightweight, feature-rich desktop companion that brings a playful goose to you
 
 ### Core Features
 - **Single Goose Instance**: Only one goose spawns on your desktop
+- **Multi-Goose Support**: Spawn multiple geese with unique personalities
+- **Mood System**: Goose reacts to your behavior and system state
+- **App Reactions**: Goose responds to what applications you're using
 - **Silent Operation**: No sounds or honks for distraction-free use (configurable)
 - **Minimal Resource Usage**: Optimized for performance
 - **Modular Architecture**: 78+ modules available
@@ -18,6 +21,8 @@ A lightweight, feature-rich desktop companion that brings a playful goose to you
 - **Subtle Animations**: Gentle breathing, blinking, and contextual animations
 - **Productivity Reminders**: Non-intrusive break, posture, and hydration reminders
 - **Learning & Memory**: Remembers user patterns and favorite applications
+- **AI Chat Goose**: Chat with your goose using local LLM
+- **Code Assistant**: Get code help and reviews from your goose
 
 ---
 
@@ -49,8 +54,25 @@ A lightweight, feature-rich desktop companion that brings a playful goose to you
 | Feature | Description |
 |---------|-------------|
 | **Pet Interactions** | Pet, feed, play, teach tricks to the goose |
-| **Mini Games** | Whack-a-Goose, Memory Match, Quiz, Word Game |
+| **Mini Games** | Whack-a-Goose, Memory Match, Quiz, Word Game, Goose Chase |
+| **Multi-Goose Mode** | Spawn multiple geese with different personalities |
+| **RPG Progression** | Level up your goose with stats and unlockables |
 | **AR Mode** | Camera overlay with face/hand tracking |
+
+### Phase 5 - Community & Extensibility
+| Feature | Description |
+|---------|-------------|
+| **Plugin API** | Create custom plugins with hooks and events |
+| **Marketplace** | Download skins, behaviors, and plugins |
+| **Streamer Mode** | Twitch chat controls your goose |
+| **Multiplayer** | Visit friends with your goose |
+
+### Phase 6 - Crazy Ideas
+| Feature | Description |
+|---------|-------------|
+| **Multiplayer Goose** | Goose invasions and duels |
+| **Desktop Memes** | Goose drags memes across screen |
+| **Fake Errors** | Goose creates fake error popups |
 
 ---
 
@@ -148,6 +170,43 @@ MiniGamesEnabled=False
 # AR Mode
 ARModeEnabled=False
 ARFaceTracking=False
+
+# Multi-Goose Mode
+MultiGooseEnabled=False
+MaxGooseCount=3
+
+# RPG Progression
+RPGEnabled=False
+AutoSaveXP=True
+```
+
+### Phase 5 - Community Configuration
+```ini
+# Plugin API
+PluginAPIEnabled=False
+PluginDirectory=plugins
+
+# Marketplace
+MarketplaceEnabled=False
+
+# Streamer Mode
+StreamerModeEnabled=False
+TwitchChannel=
+
+# Multiplayer
+MultiplayerEnabled=False
+```
+
+### Phase 6 - Crazy Features
+```ini
+# Desktop Memes
+MemeDragEnabled=False
+
+# Fake Errors
+FakeErrorEnabled=False
+
+# Voice Honks
+VoiceHonksEnabled=False
 ```
 
 ---
@@ -269,16 +328,27 @@ DesktopGoose/
 │   ├── EyeStrain.ps1      # NEW: 20-20-20 rule
 │   └── Posture.ps1        # NEW: Posture checks
 ├── Social/                  # Social features
-│   └── PetInteractions.ps1 # NEW: Pet interactions
+│   ├── PetInteractions.ps1 # Pet interactions
+│   └── GooseRPG.ps1       # NEW: RPG progression
 ├── Fun/                     # Fun features
-│   ├── MiniGames.ps1       # NEW: Mini games
-│   └── ARMode.ps1         # NEW: AR camera mode
+│   ├── MiniGames.ps1       # Mini games (expanded)
+│   ├── ARMode.ps1         # AR camera mode
+│   └── CodeAssistant.ps1 # NEW: AI code assistant
+├── System/                  # System integration
+│   ├── PluginAPI.ps1       # NEW: Plugin system
+│   └── Marketplace.ps1    # NEW: Plugin marketplace
+├── Health/                  # Wellness
+│   └── Learning.ps1       # NEW: Learning system
 ├── docs/                   # Documentation
+│   ├── FEATURES.md        # Feature roadmap
+│   ├── ROADMAP.md         # Project roadmap
+│   ├── PLUGIN-API.md      # Plugin development
 │   ├── MODULES.md         # Module reference
 │   └── ARCHITECTURE.md    # Architecture
 ├── config.ini               # Configuration
 ├── goose.vbs               # Silent launch
 ├── run-all.ps1            # Run all modules
+├── plugins/               # Plugin directory (NEW)
 └── README.md              # This file
 ```
 

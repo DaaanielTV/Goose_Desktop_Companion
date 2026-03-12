@@ -44,6 +44,8 @@
 | `System/Telemetry.ps1` | OpenTelemetry collection and sync |
 | `System/FileOrganizer.ps1` | Auto-categorize and organize files |
 | `System/Automation.ps1` | Automation hub with triggers and actions |
+| `System/PluginAPI.ps1` | **NEW** Plugin system and API |
+| `System/Marketplace.ps1` | **NEW** Marketplace downloader |
 
 ## Features
 
@@ -67,9 +69,11 @@
 | `Fun/Honk.ps1` | Honk sounds |
 | `Fun/Eastereggs.ps1` | Hidden easter eggs |
 | `Fun/Skins.ps1` | Skin management |
-| `Fun/Mood.ps1` | Mood system |
-| `Fun/MiniGames.ps1` | Mini games (Whack-a-Goose, Memory Match, Quiz, Word Game) |
+| `Fun/Mood.ps1` | Mood system (enhanced with triggers) |
+| `Fun/MiniGames.ps1` | Mini games (Whack-a-Goose, Memory Match, Quiz, Word Game, Goose Chase) |
 | `Fun/ARMode.ps1` | Camera-based AR mode with face/hand tracking |
+| `Fun/CodeAssistant.ps1` | **NEW** AI code review and assistance |
+| `Fun/AppReactions.ps1` | **NEW** App-specific goose reactions |
 
 ## Health
 
@@ -81,6 +85,7 @@
 | `Health/ScreenTime.ps1` | Screen time monitoring |
 | `Health/EyeStrain.ps1` | 20-20-20 rule eye strain prevention |
 | `Health/Posture.ps1` | Posture checks and reminders |
+| `Health/Learning.ps1` | **NEW** Learning goose with quizzes and streaks |
 
 ## UI
 
@@ -100,6 +105,8 @@
 | `Social/Kindness.ps1` | Kindness actions |
 | `Social/Inspiration.ps1` | Inspiration quotes |
 | `Social/PetInteractions.ps1` | Interactive pet features (pet, feed, play, tricks) |
+| `Social/GooseRPG.ps1` | **NEW** RPG progression system |
+| `Social/Multiplayer.ps1` | **NEW** Multiplayer goose features |
 
 ## Media
 
@@ -147,20 +154,20 @@
 
 ## Module Categories Summary
 
-| Category | Count | New in Phase 1-4 |
+| Category | Count | New in Phase 1-5 |
 |----------|-------|------------------|
 | Core | 1 | |
-| Widgets | 6 | ✓ Stock Ticker, Calendar |
-| Productivity | 11 | ✓ TimeBlock, TaskIntegration, AIAssistant |
-| System | 12 | ✓ Clipboard (enhanced), FileOrganizer, Automation |
+| Widgets | 6 | |
+| Productivity | 11 | |
+| System | 12 | ✓ PluginAPI, Marketplace |
 | Features | 9 | |
-| Fun | 7 | ✓ MiniGames, ARMode |
-| Health | 6 | ✓ EyeStrain, Posture |
+| Fun | 9 | ✓ CodeAssistant, AppReactions |
+| Health | 7 | ✓ Learning |
 | UI | 3 | |
-| Social | 6 | ✓ PetInteractions |
+| Social | 8 | ✓ RPG, Multiplayer |
 | Media | 3 | |
 | Office | 3 | |
 | Tools | 4 | |
 | Status | 3 | |
 | Special | 4 | |
-| **Total** | **78** | **16 new modules** |
+| **Total** | **83** | **8 new modules** |
