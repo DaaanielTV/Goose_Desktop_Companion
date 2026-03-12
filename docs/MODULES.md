@@ -45,8 +45,8 @@
 | `System/Telemetry.ps1` | OpenTelemetry collection and sync |
 | `System/FileOrganizer.ps1` | Auto-categorize and organize files |
 | `System/Automation.ps1` | Automation hub with triggers and actions |
-| `System/PluginAPI.ps1` | **NEW** Plugin system and API |
-| `System/Marketplace.ps1` | **NEW** Marketplace downloader |
+| `System/PluginAPI.ps1` | **NEW** Plugin system with hooks |
+| `System/Marketplace.ps1` | **NEW** Download skins, plugins, behaviors |
 
 ## Features
 
