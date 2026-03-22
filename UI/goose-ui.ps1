@@ -200,6 +200,11 @@ $tabSocial.Text = "Social"
 $tabSocial.BackColor = [System.Drawing.Color]::FromArgb(40, 40, 45)
 $tabControl.TabPages.Add($tabSocial)
 
+$tabScripts = New-Object System.Windows.Forms.TabPage
+$tabScripts.Text = "Scripts"
+$tabScripts.BackColor = [System.Drawing.Color]::FromArgb(40, 40, 45)
+$tabControl.TabPages.Add($tabScripts)
+
 $titleLabel = New-Object System.Windows.Forms.Label
 $titleLabel.Text = "Desktop Goose Control Center"
 $titleLabel.Font = New-Object System.Drawing.Font("Segoe UI", 20, [System.Drawing.FontStyle]::Bold)
@@ -450,6 +455,8 @@ $productivityFeatures = @(
     @{Name="Tasks"; Path=(Join-Path $scriptDir "..\Productivity\goose-tasks.ps1"); Desc="Task management system"},
     @{Name="Pomodoro"; Path=(Join-Path $scriptDir "..\Productivity\goose-pomodoro.ps1"); Desc="Focus timer with breaks"},
     @{Name="Focus Mode"; Path=(Join-Path $scriptDir "..\Productivity\goose-focus.ps1"); Desc="Distraction-free focus periods"},
+    @{Name="Focus Companion"; Path=(Join-Path $scriptDir "..\Productivity\goose-focus-companion.ps1"); Desc="Active focus session partner"},
+    @{Name="Quick Notes"; Path=(Join-Path $scriptDir "..\Productivity\goose-quick-notes.ps1"); Desc="Desktop note overlay"},
     @{Name="Time Tracking"; Path=(Join-Path $scriptDir "..\Productivity\goose-timetracking.ps1"); Desc="Track your work time"},
     @{Name="Time Blocks"; Path=(Join-Path $scriptDir "..\Productivity\goose-timeblock.ps1"); Desc="Schedule time blocks"},
     @{Name="AI Chat"; Path=(Join-Path $scriptDir "..\Productivity\goose-aichat.ps1"); Desc="Chat with AI assistant"},
@@ -507,7 +514,9 @@ $funFeatures = @(
     @{Name="Honk"; Path=(Join-Path $scriptDir "..\Fun\goose-honk.ps1"); Desc="Make the goose honk"},
     @{Name="Easter Eggs"; Path=(Join-Path $scriptDir "..\Fun\goose-eastereggs.ps1"); Desc="Hidden surprises"},
     @{Name="Streamer Mode"; Path=(Join-Path $scriptDir "..\Fun\goose-streamer.ps1"); Desc="Streaming overlays"},
-    @{Name="Code Assistant"; Path=(Join-Path $scriptDir "..\Fun\goose-codeassistant.ps1"); Desc="Programming help"}
+    @{Name="Code Assistant"; Path=(Join-Path $scriptDir "..\Fun\goose-codeassistant.ps1"); Desc="Programming help"},
+    @{Name="Desktop Capture"; Path=(Join-Path $scriptDir "..\Media\goose-capture.ps1"); Desc="Screenshot with annotations"},
+    @{Name="Goose Memory"; Path=(Join-Path $scriptDir "..\System\goose-memory.ps1"); Desc="Persistent interaction memory"}
 )
 
 $fx = 20
@@ -536,7 +545,11 @@ $systemFeatures = @(
     @{Name="Plugin Marketplace"; Path=(Join-Path $scriptDir "..\System\goose-marketplace.ps1"); Desc="Browse plugins"},
     @{Name="Plugin API"; Path=(Join-Path $scriptDir "..\System\goose-pluginapi.ps1"); Desc="Developer API"},
     @{Name="Notifications"; Path=(Join-Path $scriptDir "..\System\goose-notifications.ps1"); Desc="Notification system"},
-    @{Name="Telemetry"; Path=(Join-Path $scriptDir "..\System\goose-telemetry.ps1"); Desc="Usage analytics"}
+    @{Name="Telemetry"; Path=(Join-Path $scriptDir "..\System\goose-telemetry.ps1"); Desc="Usage analytics"},
+    @{Name="Voice Commands"; Path=(Join-Path $scriptDir "..\System\goose-voice.ps1"); Desc="Speech recognition"},
+    @{Name="Smart Notifications"; Path=(Join-Path $scriptDir "..\System\goose-smart-notifications.ps1"); Desc="Smart notification dashboard"},
+    @{Name="Window Manager"; Path=(Join-Path $scriptDir "..\System\goose-window-manager.ps1"); Desc="Window organization"},
+    @{Name="Script Hub"; Path=(Join-Path $scriptDir "..\System\goose-script-hub.ps1"); Desc="PowerShell script manager"}
 )
 
 $sx = 20
@@ -560,6 +573,7 @@ $widgetFeatures = @(
     @{Name="Stock Ticker"; Path=(Join-Path $scriptDir "..\Widgets\goose-stockticker.ps1"); Desc="Stock price display"},
     @{Name="Countdown"; Path=(Join-Path $scriptDir "..\Widgets\goose-countdown.ps1"); Desc="Countdown timer"},
     @{Name="Quotes"; Path=(Join-Path $scriptDir "..\Widgets\goose-quotes.ps1"); Desc="Inspirational quotes"},
+    @{Name="Daily Briefing"; Path=(Join-Path $scriptDir "..\Widgets\goose-daily-briefing.ps1"); Desc="Morning summary widget"},
     @{Name="Calendar (Features)"; Path=(Join-Path $scriptDir "..\Features\goose-calendar.ps1"); Desc="Full calendar feature"}
 )
 
@@ -580,6 +594,7 @@ Create-SectionLabel -Text "Social & Gamification" -ParentPanel $tabSocial -X 20 
 $socialFeatures = @(
     @{Name="RPG System"; Path=(Join-Path $scriptDir "..\Social\goose-rpg.ps1"); Desc="Level up your goose"},
     @{Name="Gamification"; Path=(Join-Path $scriptDir "..\Social\goose-gamification.ps1"); Desc="Points and rewards"},
+    @{Name="Achievements"; Path=(Join-Path $scriptDir "..\Social\goose-achievements.ps1"); Desc="Unlock achievements"},
     @{Name="Leaderboard"; Path=(Join-Path $scriptDir "..\Social\goose-leaderboard.ps1"); Desc="Compare with others"},
     @{Name="Multiplayer"; Path=(Join-Path $scriptDir "..\Social\goose-multiplayer.ps1"); Desc="Multiple goose owners"},
     @{Name="Multi-Goose"; Path=(Join-Path $scriptDir "..\Social\goose-multigoose.ps1"); Desc="Multiple geese mode"},
@@ -598,6 +613,105 @@ for ($i = 0; $i -lt $socialFeatures.Count; $i++) {
     if (($i + 1) % 5 -eq 0) {
         $sox = 20
         $soy += 80
+    }
+}
+
+Create-SectionLabel -Text "PowerShell Script Hub" -ParentPanel $tabScripts -X 20 -Y 20
+
+$scriptLabel = New-Object System.Windows.Forms.Label
+$scriptLabel.Text = "Create, manage and execute custom PowerShell scripts"
+$scriptLabel.Location = New-Object System.Drawing.Point(20, 50)
+$scriptLabel.Size = New-Object System.Drawing.Size(400, 20)
+$scriptLabel.ForeColor = [System.Drawing.Color]::FromArgb(180, 180, 185)
+$tabScripts.Controls.Add($scriptLabel)
+
+$btnOpenScriptHub = New-Object System.Windows.Forms.Button
+$btnOpenScriptHub.Text = "Open Script Hub"
+$btnOpenScriptHub.Location = New-Object System.Drawing.Point(20, 80)
+$btnOpenScriptHub.Size = New-Object System.Drawing.Size(180, 50)
+$btnOpenScriptHub.BackColor = [System.Drawing.Color]::FromArgb(0, 120, 215)
+$btnOpenScriptHub.ForeColor = [System.Drawing.Color]::White
+$btnOpenScriptHub.FlatStyle = "Flat"
+$btnOpenScriptHub.Font = New-Object System.Drawing.Font("Segoe UI", 10)
+$btnOpenScriptHub.Add_Click({
+    Launch-FeatureScript -ScriptPath (Join-Path $scriptDir "..\System\goose-script-hub.ps1") -ScriptName "Script Hub"
+})
+$tabScripts.Controls.Add($btnOpenScriptHub)
+
+Create-SectionLabel -Text "Script Categories" -ParentPanel $tabScripts -X 20 -Y 150
+
+$scriptCategories = @(
+    @{Name="Custom Scripts"; Path=(Join-Path $scriptDir "..\System\goose-script-hub.ps1"); Desc="Your custom scripts"},
+    @{Name="Script Templates"; Path=(Join-Path $scriptDir "..\System\goose-script-hub.ps1"); Desc="Ready-to-use templates"},
+    @{Name="Script History"; Path=(Join-Path $scriptDir "..\System\goose-script-hub.ps1"); Desc="Recent executions"},
+    @{Name="Import Script"; Path=(Join-Path $scriptDir "..\System\goose-script-hub.ps1"); Desc="Import from file"},
+    @{Name="Export Scripts"; Path=(Join-Path $scriptDir "..\System\goose-script-hub.ps1"); Desc="Export all scripts"}
+)
+
+$scx = 20
+$scy = 180
+for ($i = 0; $i -lt $scriptCategories.Count; $i++) {
+    $feat = $scriptCategories[$i]
+    $btn = Create-FeatureButton -Text "$($feat.Name)" -ScriptPath $feat.Path -Description $feat.Desc -ParentPanel $tabScripts -X $scx -Y $scy -Width 180 -Height 60
+    $scx += 190
+    if (($i + 1) % 4 -eq 0) {
+        $scx = 20
+        $scy += 70
+    }
+}
+
+Create-SectionLabel -Text "Quick Scripts" -ParentPanel $tabScripts -X 20 -Y 320
+
+$quickScripts = @(
+    @{Name="List Files"; Script='Get-ChildItem | Select-Object Name, Length, LastWriteTime | Format-Table'},
+    @{Name="System Info"; Script='Get-ComputerInfo | Select-Object CsName, WindowsVersion, OsArchitecture | Format-List'},
+    @{Name="Running Processes"; Script='Get-Process | Sort-Object CPU -Descending | Select-Object -First 10 | Format-Table Name, CPU, WorkingSet'},
+    @{Name="Network Status"; Script='Get-NetIPAddress | Where-Object AddressFamily -eq "IPv4" | Select-Object InterfaceAlias, IPAddress'}
+)
+
+$qsx = 20
+$qsy = 350
+foreach ($qs in $quickScripts) {
+    $qsPanel = New-Object System.Windows.Forms.Panel
+    $qsPanel.Location = New-Object System.Drawing.Point($qsx, $qsy)
+    $qsPanel.Size = New-Object System.Drawing.Size(200, 80)
+    $qsPanel.BackColor = [System.Drawing.Color]::FromArgb(50, 50, 55)
+    $qsPanel.BorderStyle = "FixedSingle"
+    
+    $qsLabel = New-Object System.Windows.Forms.Label
+    $qsLabel.Text = $qs.Name
+    $qsLabel.Location = New-Object System.Drawing.Point(10, 10)
+    $qsLabel.Size = New-Object System.Drawing.Size(180, 20)
+    $qsLabel.Font = New-Object System.Drawing.Font("Segoe UI", 10, [System.Drawing.FontStyle]::Bold)
+    $qsLabel.ForeColor = [System.Drawing.Color]::White
+    $qsPanel.Controls.Add($qsLabel)
+    
+    $qsBtn = New-Object System.Windows.Forms.Button
+    $qsBtn.Text = "Run"
+    $qsBtn.Location = New-Object System.Drawing.Point(10, 40)
+    $qsBtn.Size = New-Object System.Drawing.Size(80, 30)
+    $qsBtn.BackColor = [System.Drawing.Color]::FromArgb(0, 150, 80)
+    $qsBtn.ForeColor = [System.Drawing.Color]::White
+    $qsBtn.FlatStyle = "Flat"
+    $qsBtn.Add_Click({
+        Start-Process powershell -ArgumentList "-Command `"$($qs.Script)`""
+    })
+    $qsPanel.Controls.Add($qsBtn)
+    
+    $qsEditBtn = New-Object System.Windows.Forms.Button
+    $qsEditBtn.Text = "Edit"
+    $qsEditBtn.Location = New-Object System.Drawing.Point(100, 40)
+    $qsEditBtn.Size = New-Object System.Drawing.Size(80, 30)
+    $qsEditBtn.BackColor = [System.Drawing.Color]::FromArgb(0, 120, 215)
+    $qsEditBtn.ForeColor = [System.Drawing.Color]::White
+    $qsEditBtn.FlatStyle = "Flat"
+    $qsPanel.Controls.Add($qsEditBtn)
+    
+    $tabScripts.Controls.Add($qsPanel)
+    $qsx += 210
+    if ($qsx -gt 800) {
+        $qsx = 20
+        $qsy += 90
     }
 }
 

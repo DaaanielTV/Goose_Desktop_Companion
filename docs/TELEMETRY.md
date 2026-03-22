@@ -4,6 +4,8 @@
 
 Das Telemetry-Modul implementiert OpenTelemetry für Desktop Goose und sammelt Metriken, Traces und Logs lokal. Alle 7 Tage werden die gesammelten Daten automatisch an eine Supabase-Instanz gesendet.
 
+**Hinweis:** Telemetrie ist standardmäßig **aktiviert**.
+
 ## Features
 
 - **Metriken**: Counter, Gauges, Histograms für System- und Anwendungsdaten
@@ -11,14 +13,15 @@ Das Telemetry-Modul implementiert OpenTelemetry für Desktop Goose und sammelt M
 - **Logs**: Strukturierte Logging-Events
 - **Auto-Sync**: Automatischer Upload alle 7 Tage
 - **Offline-First**: Lokale Speicherung bei fehlender Verbindung
+- **Feature Metrics**: Automatische Metriken für alle neuen Features
 
 ## Konfiguration
 
 In `config.ini`:
 
 ```ini
-# Telemetry (OpenTelemetry)
-TelemetryEnabled=False
+# Telemetry (OpenTelemetry) - Standardmäßig aktiviert
+TelemetryEnabled=True
 TelemetrySyncIntervalDays=7
 TelemetryMaxBufferSize=1000
 TelemetryCollectMetrics=True
@@ -189,3 +192,118 @@ telemetry_data/
 - **Standard**: 7 Tage
 - **Konfigurierbar**: `TelemetrySyncIntervalDays` in `config.ini`
 - Manueller Sync jederzeit möglich mit `Sync-Telemetry`
+
+---
+
+## Feature-Metriken (Phase 7)
+
+### Script Hub
+
+| Metrik | Typ | Beschreibung |
+|--------|-----|--------------|
+| `scripts.created` | counter | Erstellte Scripts |
+| `scripts.executed` | counter | Ausgeführte Scripts |
+| `scripts.execution_duration_ms` | histogram | Ausführungsdauer in ms |
+| `scripts.errors` | counter | Script-Fehler |
+
+### Desktop Capture
+
+| Metrik | Typ | Beschreibung |
+|--------|-----|--------------|
+| `capture.screenshots_taken` | counter | Aufgenommene Screenshots |
+| `capture.screenshots_saved` | counter | Gespeicherte Screenshots |
+| `capture.regions_captured` | counter | Region-Captures |
+| `capture.annotations_made` | counter | Annotationen erstellt |
+| `capture.copied_to_clipboard` | counter | In Clipboard kopiert |
+
+### Focus Companion
+
+| Metrik | Typ | Beschreibung |
+|--------|-----|--------------|
+| `focus.sessions_started` | counter | Gestartete Sessions |
+| `focus.sessions_completed` | counter | Abgeschlossene Sessions |
+| `focus.sessions_abandoned` | counter | Abgebrochene Sessions |
+| `focus.breaks_started` | counter | Gestartete Pausen |
+| `focus.interruptions` | counter | Unterbrechungen |
+| `focus.duration_minutes` | histogram | Fokus-Dauer in Minuten |
+| `focus.warnings_shown` | counter | Warnungen angezeigt |
+
+### Voice Commands
+
+| Metrik | Typ | Beschreibung |
+|--------|-----|--------------|
+| `voice.listening_started` | counter | Spracherkennung gestartet |
+| `voice.listening_stopped` | counter | Spracherkennung gestoppt |
+| `voice.wake_word_activations` | counter | Wake-Word Aktivierungen |
+| `voice.commands_recognized` | counter | Erkannte Befehle |
+| `voice.commands_failed` | counter | Fehlgeschlagene Befehle |
+| `voice.speech_detected` | counter | Spracherkennung-Events |
+| `voice.speeches` | counter | Sprachausgaben |
+| `voice.animations_triggered` | counter | Animationen ausgelöst |
+| `voice.jokes_told` | counter | Witze erzählt |
+| `voice.weather_requests` | counter | Wetter-Anfragen |
+| `voice.focus_commands` | counter | Fokus-Befehle |
+| `voice.help_requests` | counter | Hilfe-Anfragen |
+
+### Smart Notifications
+
+| Metrik | Typ | Beschreibung |
+|--------|-----|--------------|
+| `notifications.received` | counter | Empfangene Benachrichtigungen |
+| `notifications.snoozed` | counter | Stilisierte Benachrichtigungen |
+| `notifications.dismissed` | counter | Verworfene Benachrichtigungen |
+| `notifications.marked_read` | counter | Als gelesen markiert |
+| `notifications.marked_all_read` | counter | Alle als gelesen |
+| `notifications.goose_reactions` | counter | Gans-Reaktionen |
+
+### Quick Notes
+
+| Metrik | Typ | Beschreibung |
+|--------|-----|--------------|
+| `notes.created` | counter | Erstellte Notizen |
+| `notes.edited` | counter | Bearbeitete Notizen |
+| `notes.deleted` | counter | Gelöschte Notizen |
+| `notes.pinned` | counter | Angeheftete Notizen |
+| `notes.characters_written` | histogram | Geschriebene Zeichen |
+| `notes.created_from_ui` | counter | UI-Notiz-Erstellung |
+
+### Window Manager
+
+| Metrik | Typ | Beschreibung |
+|--------|-----|--------------|
+| `window.snap_actions` | counter | Fenster-Snap-Aktionen |
+| `window.maximize_actions` | counter | Maximieren-Aktionen |
+| `window.minimize_actions` | counter | Minimieren-Aktionen |
+| `window.center_actions` | counter | Zentrieren-Aktionen |
+| `window.tile_all` | counter | Alle-Fenster-Tiling |
+| `window.presets_saved` | counter | Gespeicherte Presets |
+| `window.presets_applied` | counter | Angewendete Presets |
+
+### Daily Briefing
+
+| Metrik | Typ | Beschreibung |
+|--------|-----|--------------|
+| `briefing.viewed` | counter | Angesehene Briefings |
+| `briefing.weather_fetched` | counter | Abgerufene Wetterdaten |
+| `briefing.quotes_fetched` | counter | Abgerufene Zitate |
+
+### Goose Memory
+
+| Metrik | Typ | Beschreibung |
+|--------|-----|--------------|
+| `memory.interactions_logged` | counter | Loggte Interaktionen |
+| `memory.recalls` | counter | Erinnerungs-Abrufe |
+| `memory.forgotten` | counter | Vergessene Erinnerungen |
+| `memory.patterns_learned` | counter | Erkannte Muster |
+| `memory.pattern_matched` | counter | Übereinstimmungen |
+| `memory.conversations_stored` | counter | Gespeicherte Konversationen |
+| `memory.preferences_stored` | counter | Gespeicherte Präferenzen |
+| `memory.imports` | counter | Importe |
+| `memory.cleared` | counter | Löschungen |
+
+### Achievements
+
+| Metrik | Typ | Beschreibung |
+|--------|-----|--------------|
+| `achievements.unlocked` | counter | Freigeschaltete Achievements |
+| `achievements.total_points` | gauge | Gesamtpunktzahl |

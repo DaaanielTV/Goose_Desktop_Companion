@@ -1,7 +1,7 @@
 class GooseTelemetryConfig {
     static [hashtable] Load([string]$configFile = "config.ini") {
         $config = @{
-            Enabled = $false
+            Enabled = $true
             SyncIntervalDays = 7
             SupabaseUrl = ""
             SupabaseAnonKey = ""
@@ -416,5 +416,63 @@ function Record-TelemetryHistogram { param([string]$Name, [double]$Value, [strin
 function Sync-Telemetry { return $gooseTelemetry.SyncToSupabase() }
 function Test-TelemetrySync { return $gooseTelemetry.ShouldSync() }
 function Get-TelemetryConfig { return $gooseTelemetry.Config }
+
+function Record-ScriptHubMetrics {
+    param([string]$Action, [hashtable]$Tags = @{})
+    $gooseTelemetry.IncrementCounter("script_hub.$Action", 1, $Tags)
+}
+
+function Record-CaptureMetrics {
+    param([string]$Action, [hashtable]$Tags = @{})
+    $gooseTelemetry.IncrementCounter("capture.$Action", 1, $Tags)
+}
+
+function Record-FocusMetrics {
+    param([string]$Action, [double]$Value = 1, [hashtable]$Tags = @{})
+    if ($Action -eq "duration") {
+        $gooseTelemetry.RecordHistogram("focus.duration_minutes", $Value, "minutes", $Tags)
+    } else {
+        $gooseTelemetry.IncrementCounter("focus.$Action", $Value, $Tags)
+    }
+}
+
+function Record-VoiceMetrics {
+    param([string]$Action, [hashtable]$Tags = @{})
+    $gooseTelemetry.IncrementCounter("voice.$Action", 1, $Tags)
+}
+
+function Record-NotificationMetrics {
+    param([string]$Action, [hashtable]$Tags = @{})
+    $gooseTelemetry.IncrementCounter("notifications.$Action", 1, $Tags)
+}
+
+function Record-NotesMetrics {
+    param([string]$Action, [double]$Value = 1, [hashtable]$Tags = @{})
+    if ($Action -eq "characters") {
+        $gooseTelemetry.RecordHistogram("notes.characters_written", $Value, "chars", $Tags)
+    } else {
+        $gooseTelemetry.IncrementCounter("notes.$Action", $Value, $Tags)
+    }
+}
+
+function Record-WindowMetrics {
+    param([string]$Action, [hashtable]$Tags = @{})
+    $gooseTelemetry.IncrementCounter("window.$Action", 1, $Tags)
+}
+
+function Record-BriefingMetrics {
+    param([string]$Action, [hashtable]$Tags = @{})
+    $gooseTelemetry.IncrementCounter("briefing.$Action", 1, $Tags)
+}
+
+function Record-MemoryMetrics {
+    param([string]$Action, [hashtable]$Tags = @{})
+    $gooseTelemetry.IncrementCounter("memory.$Action", 1, $Tags)
+}
+
+function Record-AchievementMetrics {
+    param([string]$AchievementId)
+    $gooseTelemetry.IncrementCounter("achievements.unlocked", 1, @{achievement=$AchievementId})
+}
 
 Write-Host "Telemetry Module Initialized"
