@@ -589,6 +589,7 @@ END;
 $$ LANGUAGE plpgsql;
 
 -- Comment
+COMMENT ON TABLE telemetry_events IS 'Desktop Goose telemetry - feature usage, errors, sessions, performance';
 COMMENT ON TABLE analytics_summaries IS 'Daily aggregated analytics for user productivity and habits';
 COMMENT ON TABLE reports IS 'Generated reports (weekly summaries, habit analysis, etc.)';
 COMMENT ON TABLE goals IS 'User goals and targets with progress tracking';
@@ -602,6 +603,19 @@ COMMENT ON TABLE sync_history IS 'Audit log of sync operations';
 -- =============================================
 -- OpenTelemetry Tables
 -- =============================================
+
+-- Telemetry events (feature usage, errors, sessions)
+CREATE TABLE IF NOT EXISTS telemetry_events (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    device_id TEXT NOT NULL,
+    session_id UUID,
+    event_type TEXT NOT NULL CHECK (event_type IN ('SessionStart', 'SessionEnd', 'FeatureUsed', 'WindowInteraction', 'Error', 'Performance')),
+    module_name TEXT NOT NULL,
+    feature_name TEXT NOT NULL,
+    properties JSONB DEFAULT '{}',
+    timestamp TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
 
 -- Telemetry metrics (counters, gauges)
 CREATE TABLE IF NOT EXISTS telemetry_metrics (
@@ -660,6 +674,10 @@ CREATE TABLE IF NOT EXISTS telemetry_batches (
 );
 
 -- Indexes for telemetry tables
+CREATE INDEX IF NOT EXISTS idx_telemetry_events_device_time ON telemetry_events(device_id, timestamp);
+CREATE INDEX IF NOT EXISTS idx_telemetry_events_session ON telemetry_events(session_id);
+CREATE INDEX IF NOT EXISTS idx_telemetry_events_type ON telemetry_events(event_type);
+CREATE INDEX IF NOT EXISTS idx_telemetry_events_module ON telemetry_events(module_name, feature_name);
 CREATE INDEX IF NOT EXISTS idx_telemetry_metrics_device_time ON telemetry_metrics(device_id, timestamp);
 CREATE INDEX IF NOT EXISTS idx_telemetry_metrics_name ON telemetry_metrics(metric_name);
 CREATE INDEX IF NOT EXISTS idx_telemetry_spans_device_time ON telemetry_spans(device_id, timestamp);
@@ -669,12 +687,19 @@ CREATE INDEX IF NOT EXISTS idx_telemetry_logs_level ON telemetry_logs(log_level)
 CREATE INDEX IF NOT EXISTS idx_telemetry_batches_device ON telemetry_batches(device_id, uploaded_at);
 
 -- Enable RLS on telemetry tables
+ALTER TABLE telemetry_events ENABLE ROW LEVEL SECURITY;
 ALTER TABLE telemetry_metrics ENABLE ROW LEVEL SECURITY;
 ALTER TABLE telemetry_spans ENABLE ROW LEVEL SECURITY;
 ALTER TABLE telemetry_logs ENABLE ROW LEVEL SECURITY;
 ALTER TABLE telemetry_batches ENABLE ROW LEVEL SECURITY;
 
 -- RLS Policies for telemetry (allow anonymous device-based writes)
+CREATE POLICY "Devices can insert telemetry events" ON telemetry_events
+    FOR INSERT WITH CHECK (true);
+
+CREATE POLICY "Devices can view own telemetry events" ON telemetry_events
+    FOR SELECT USING (device_id = current_setting('app.settings.device_id', true));
+
 CREATE POLICY "Devices can insert metrics" ON telemetry_metrics
     FOR INSERT WITH CHECK (true);
 
@@ -697,6 +722,7 @@ CREATE POLICY "Devices can view own logs" ON telemetry_logs
     FOR SELECT USING (device_id = current_setting('app.settings.device_id', true));
 
 -- Grant permissions
+GRANT ALL ON telemetry_events TO service_role;
 GRANT ALL ON telemetry_metrics TO service_role;
 GRANT ALL ON telemetry_spans TO service_role;
 GRANT ALL ON telemetry_logs TO service_role;

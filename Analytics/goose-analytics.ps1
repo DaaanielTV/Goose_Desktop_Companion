@@ -16,6 +16,15 @@ enum GoalType {
     DailyActive
 }
 
+enum TelemetryEventType {
+    SessionStart
+    SessionEnd
+    FeatureUsed
+    WindowInteraction
+    Error
+    Performance
+}
+
 class Goal {
     [string]$Id
     [string]$UserId
@@ -62,6 +71,42 @@ class Achievement {
     }
 }
 
+class TelemetryEvent {
+    [string]$Id
+    [TelemetryEventType]$EventType
+    [string]$ModuleName
+    [string]$FeatureName
+    [hashtable]$Properties
+    [datetime]$Timestamp
+    [string]$DeviceId
+
+    TelemetryEvent([TelemetryEventType]$type, [string]$module, [string]$feature) {
+        $this.Id = [guid]::NewGuid().ToString()
+        $this.EventType = $type
+        $this.ModuleName = $module
+        $this.FeatureName = $feature
+        $this.Properties = @{}
+        $this.Timestamp = Get-Date
+    }
+}
+
+class AppSession {
+    [string]$Id
+    [datetime]$StartTime
+    [datetime]$EndTime
+    [TimeSpan]$Duration
+    [string]$Version
+    [string]$OsVersion
+    [bool]$WasCleanExit
+
+    AppSession() {
+        $this.Id = [guid]::NewGuid().ToString()
+        $this.StartTime = Get-Date
+        $this.Version = "1.0.0"
+        $this.WasCleanExit = $false
+    }
+}
+
 class GooseAnalyticsClient {
     [hashtable]$Config
     [string]$SupabaseUrl
@@ -72,6 +117,9 @@ class GooseAnalyticsClient {
     [bool]$IsOnline
     [System.Collections.ArrayList]$ActiveGoals
     [System.Collections.ArrayList]$Achievements
+    [System.Collections.ArrayList]$TelemetryQueue
+    [AppSession]$CurrentSession
+    [datetime]$LastSyncTime
 
     GooseAnalyticsClient() {
         $this.Config = $this.LoadConfig()
@@ -82,10 +130,13 @@ class GooseAnalyticsClient {
         $this.IsOnline = $false
         $this.ActiveGoals = New-Object System.Collections.ArrayList
         $this.Achievements = New-Object System.Collections.ArrayList
+        $this.TelemetryQueue = New-Object System.Collections.ArrayList
+        $this.CurrentSession = $null
 
         $this.InitializeDeviceId()
         $this.LoadLocalGoals()
         $this.LoadLocalAchievements()
+        $this.LoadPendingTelemetry()
 
         if ($this.IsEnabled) {
             $this.TestConnection()
@@ -232,6 +283,228 @@ class GooseAnalyticsClient {
         }
 
         $achievementsData | ConvertTo-Json -Depth 10 | Set-Content "goose_achievements.json"
+    }
+
+    [void] LoadPendingTelemetry() {
+        $telemetryFile = "goose_telemetry_pending.json"
+
+        if (Test-Path $telemetryFile) {
+            try {
+                $pendingData = Get-Content $telemetryFile -Raw | ConvertFrom-Json
+                foreach ($item in $pendingData) {
+                    $event = [TelemetryEvent]::new([TelemetryEventType]$item.EventType, $item.ModuleName, $item.FeatureName)
+                    $event.Id = $item.Id
+                    $event.Timestamp = $item.Timestamp
+                    $event.Properties = $item.Properties
+                    $event.DeviceId = $item.DeviceId
+                    $this.TelemetryQueue.Add($event)
+                }
+            } catch {
+            }
+        }
+    }
+
+    [void] SavePendingTelemetry() {
+        $telemetryData = @()
+
+        foreach ($event in $this.TelemetryQueue) {
+            $telemetryData += @{
+                "Id" = $event.Id
+                "EventType" = $event.EventType.ToString()
+                "ModuleName" = $event.ModuleName
+                "FeatureName" = $event.FeatureName
+                "Properties" = $event.Properties
+                "Timestamp" = $event.Timestamp.ToString("o")
+                "DeviceId" = $event.DeviceId
+            }
+        }
+
+        $telemetryData | ConvertTo-Json -Depth 10 | Set-Content "goose_telemetry_pending.json"
+    }
+
+    [void] StartSession() {
+        if ($this.CurrentSession) {
+            $this.EndSession($false)
+        }
+
+        $this.CurrentSession = [AppSession]::new()
+        $this.CurrentSession.DeviceId = $this.DeviceId
+
+        $this.TrackEvent([TelemetryEventType]::SessionStart, "System", "AppStart", @{
+            "session_id" = $this.CurrentSession.Id
+            "version" = $this.CurrentSession.Version
+            "os_version" = $this.CurrentSession.OsVersion
+        })
+    }
+
+    [void] EndSession([bool]$cleanExit = $true) {
+        if (-not $this.CurrentSession) { return }
+
+        $this.CurrentSession.EndTime = Get-Date
+        $this.CurrentSession.Duration = $this.CurrentSession.EndTime - $this.CurrentSession.StartTime
+        $this.CurrentSession.WasCleanExit = $cleanExit
+
+        $this.TrackEvent([TelemetryEventType]::SessionEnd, "System", "AppEnd", @{
+            "session_id" = $this.CurrentSession.Id
+            "duration_seconds" = $this.CurrentSession.Duration.TotalSeconds
+            "was_clean_exit" = $cleanExit
+        })
+
+        $this.FlushTelemetry()
+        $this.CurrentSession = $null
+    }
+
+    [void] TrackEvent([TelemetryEventType]$eventType, [string]$module, [string]$feature, [hashtable]$properties = @{}) {
+        if (-not $this.IsEnabled) { return }
+
+        $event = [TelemetryEvent]::new($eventType, $module, $feature)
+        $event.DeviceId = $this.DeviceId
+        $event.Properties = $properties
+
+        if ($this.CurrentSession) {
+            $event.Properties["session_id"] = $this.CurrentSession.Id
+        }
+
+        $this.TelemetryQueue.Add($event)
+        $this.SavePendingTelemetry()
+
+        if ($this.IsOnline -and $this.TelemetryQueue.Count -ge 10) {
+            $this.FlushTelemetry()
+        }
+    }
+
+    [void] TrackFeatureUsage([string]$module, [string]$feature, [hashtable]$properties = @{}) {
+        if ($properties.Count -eq 0) {
+            $properties = @{ "count" = 1 }
+        } elseif ($properties.ContainsKey("count")) {
+            $properties["count"] = [int]$properties["count"] + 1
+        }
+
+        $this.TrackEvent([TelemetryEventType]::FeatureUsed, $module, $feature, $properties)
+    }
+
+    [void] TrackWindowInteraction([string]$windowName, [string]$action, [hashtable]$properties = @{}) {
+        $props = @{
+            "window_name" = $windowName
+            "action" = $action
+        }
+        foreach ($key in $properties.Keys) {
+            $props[$key] = $properties[$key]
+        }
+
+        $this.TrackEvent([TelemetryEventType]::WindowInteraction, "UI", $windowName, $props)
+    }
+
+    [void] TrackError([string]$module, [string]$errorType, [string]$message, [hashtable]$properties = @{}) {
+        $props = @{
+            "error_type" = $errorType
+            "message" = $message
+            "stack_trace" = if ($properties.ContainsKey("stack_trace")) { $properties["stack_trace"] } else { $null }
+        }
+        foreach ($key in $properties.Keys) {
+            if ($key -ne "stack_trace") {
+                $props[$key] = $properties[$key]
+            }
+        }
+
+        $this.TrackEvent([TelemetryEventType]::Error, $module, $errorType, $props)
+    }
+
+    [void] TrackPerformance([string]$module, [string]$operation, [double]$durationMs, [hashtable]$properties = @{}) {
+        $props = @{
+            "duration_ms" = $durationMs
+            "operation" = $operation
+        }
+        foreach ($key in $properties.Keys) {
+            $props[$key] = $properties[$key]
+        }
+
+        $this.TrackEvent([TelemetryEventType]::Performance, $module, $operation, $props)
+    }
+
+    [hashtable] FlushTelemetry() {
+        if ($this.TelemetryQueue.Count -eq 0) {
+            return @{ "Success" = $true; "Flushed" = 0 }
+        }
+
+        if (-not $this.IsOnline) {
+            return @{ "Success" = $false; "Error" = "Offline"; "Queued" = $this.TelemetryQueue.Count }
+        }
+
+        $flushed = 0
+        $errors = @()
+
+        foreach ($event in $this.TelemetryQueue) {
+            $result = $this.SendTelemetryEvent($event)
+            if ($result["Success"]) {
+                $flushed++
+            } else {
+                $errors += $result["Error"]
+            }
+        }
+
+        if ($flushed -gt 0) {
+            for ($i = 0; $i -lt $flushed; $i++) {
+                $this.TelemetryQueue.RemoveAt(0)
+            }
+            $this.SavePendingTelemetry()
+            $this.LastSyncTime = Get-Date
+        }
+
+        return @{
+            "Success" = $errors.Count -eq 0
+            "Flushed" = $flushed
+            "Remaining" = $this.TelemetryQueue.Count
+            "Errors" = $errors
+        }
+    }
+
+    [hashtable] SendTelemetryEvent([TelemetryEvent]$event) {
+        $endpoint = "$($this.SupabaseUrl)/rest/v1/telemetry_events"
+
+        $headers = @{
+            "apikey" = $this.SupabaseAnonKey
+            "Authorization" = "Bearer $($this.SupabaseServiceKey)"
+            "Content-Type" = "application/json"
+            "Prefer" = "return=minimal"
+        }
+
+        $body = @{
+            "device_id" = $this.DeviceId
+            "session_id" = if ($this.CurrentSession) { $this.CurrentSession.Id } else { $null }
+            "event_type" = $event.EventType.ToString()
+            "module_name" = $event.ModuleName
+            "feature_name" = $event.FeatureName
+            "properties" = $event.Properties
+            "timestamp" = $event.Timestamp.ToString("o")
+        } | ConvertTo-Json
+
+        try {
+            Invoke-RestMethod -Uri $endpoint -Headers $headers -Method POST -Body $body | Out-Null
+            return @{ "Success" = $true }
+        } catch {
+            return @{ "Success" = $false; "Error" = $_.Exception.Message }
+        }
+    }
+
+    [object] GetTelemetryStats() {
+        $stats = @{
+            "QueueSize" = $this.TelemetryQueue.Count
+            "LastSync" = $this.LastSyncTime
+            "SessionActive" = $this.CurrentSession -ne $null
+            "SessionDuration" = if ($this.CurrentSession) { $this.CurrentSession.Duration.TotalSeconds } else { 0 }
+            "EventsByType" = @{}
+        }
+
+        foreach ($event in $this.TelemetryQueue) {
+            $typeKey = $event.EventType.ToString()
+            if (-not $stats.EventsByType.ContainsKey($typeKey)) {
+                $stats.EventsByType[$typeKey] = 0
+            }
+            $stats.EventsByType[$typeKey]++
+        }
+
+        return $stats
     }
 
     [hashtable] RecordMetric([string]$metricName, [string]$category, [object]$value) {
@@ -672,6 +945,81 @@ function Get-Goals {
 function Get-WeeklyReport {
     param($Client = $gooseAnalyticsClient)
     return $Client.GetWeeklyReport()
+}
+
+function Start-GooseSession {
+    param($Client = $gooseAnalyticsClient)
+    $Client.StartSession()
+}
+
+function Stop-GooseSession {
+    param(
+        [bool]$CleanExit = $true,
+        $Client = $gooseAnalyticsClient
+    )
+    $Client.EndSession($CleanExit)
+}
+
+function Track-GooseFeature {
+    param(
+        [Parameter(Mandatory=$true)]
+        [string]$Module,
+        [Parameter(Mandatory=$true)]
+        [string]$Feature,
+        [hashtable]$Properties = @{},
+        $Client = $gooseAnalyticsClient
+    )
+    $Client.TrackFeatureUsage($Module, $Feature, $Properties)
+}
+
+function Track-GooseWindowInteraction {
+    param(
+        [Parameter(Mandatory=$true)]
+        [string]$WindowName,
+        [Parameter(Mandatory=$true)]
+        [string]$Action,
+        [hashtable]$Properties = @{},
+        $Client = $gooseAnalyticsClient
+    )
+    $Client.TrackWindowInteraction($WindowName, $Action, $Properties)
+}
+
+function Track-GooseError {
+    param(
+        [Parameter(Mandatory=$true)]
+        [string]$Module,
+        [Parameter(Mandatory=$true)]
+        [string]$ErrorType,
+        [Parameter(Mandatory=$true)]
+        [string]$Message,
+        [hashtable]$Properties = @{},
+        $Client = $gooseAnalyticsClient
+    )
+    $Client.TrackError($Module, $ErrorType, $Message, $Properties)
+}
+
+function Track-GoosePerformance {
+    param(
+        [Parameter(Mandatory=$true)]
+        [string]$Module,
+        [Parameter(Mandatory=$true)]
+        [string]$Operation,
+        [Parameter(Mandatory=$true)]
+        [double]$DurationMs,
+        [hashtable]$Properties = @{},
+        $Client = $gooseAnalyticsClient
+    )
+    $Client.TrackPerformance($Module, $Operation, $DurationMs, $Properties)
+}
+
+function Flush-GooseTelemetry {
+    param($Client = $gooseAnalyticsClient)
+    return $Client.FlushTelemetry()
+}
+
+function Get-GooseTelemetryStats {
+    param($Client = $gooseAnalyticsClient)
+    return $Client.GetTelemetryStats()
 }
 
 Write-Host "Desktop Goose Analytics Module Initialized"
