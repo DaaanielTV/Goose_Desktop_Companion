@@ -1,361 +1,313 @@
-# Desktop Goose Daily Stats Dashboard
-# Provides comprehensive daily statistics and insights
+Add-Type -AssemblyName System.Windows.Forms
+Add-Type -AssemblyName System.Drawing
 
-class GooseStatsDashboard {
-    [hashtable]$Config
-    [hashtable]$DailyStats
-    [hashtable]$WeeklyStats
-    [hashtable]$AllTimeStats
-    [datetime]$SessionStart
-    [datetime]$Today
-    
-    GooseStatsDashboard() {
-        $this.Config = $this.LoadConfig()
-        $this.DailyStats = @{}
-        $this.WeeklyStats = @{}
-        $this.AllTimeStats = @{
-            "TotalSessions" = 0
-            "TotalFocusMinutes" = 0
-            "TotalCommands" = 0
-            "FavoriteCommand" = ""
-            "DaysActive" = 0
-            "FirstSession" = Get-Date
-        }
-        $this.SessionStart = Get-Date
-        $this.Today = (Get-Date).Date
-        $this.LoadStats()
-    }
-    
-    [hashtable] LoadConfig() {
-        $this.Config = @{}
-        $configFile = "config.ini"
-        
-        if (Test-Path $configFile) {
-            Get-Content $configFile | ForEach-Object {
-                if ($_ -match '^([^=]+)=(.*)$') {
-                    $key = $matches[1].Trim()
-                    $value = $matches[2].Trim()
-                    
-                    if ($value -eq 'True' -or $value -eq 'False') {
-                        $this.Config[$key] = [bool]$value
-                    } elseif ($value -match '^\d+$') {
-                        $this.Config[$key] = [int]$value
-                    } elseif ($value -match '^\d+\.\d+$') {
-                        $this.Config[$key] = [double]$value
-                    } else {
-                        $this.Config[$key] = $value
-                    }
-                }
-            }
-        }
-        
-        return $this.Config
-    }
-    
-    [void] LoadStats() {
-        $statsFile = "goose_stats.json"
-        
-        if (Test-Path $statsFile) {
-            try {
-                $data = Get-Content $statsFile -Raw | ConvertFrom-Json
-                $this.AllTimeStats["TotalSessions"] = $data.TotalSessions
-                $this.AllTimeStats["TotalFocusMinutes"] = $data.TotalFocusMinutes
-                $this.AllTimeStats["TotalCommands"] = $data.TotalCommands
-                $this.AllTimeStats["FavoriteCommand"] = $data.FavoriteCommand
-                $this.AllTimeStats["DaysActive"] = $data.DaysActive
-                if ($data.FirstSession) {
-                    $this.AllTimeStats["FirstSession"] = [datetime]$data.FirstSession
-                }
-            } catch {
-                # Start fresh if error
-            }
-        }
-    }
-    
-    [void] SaveStats() {
-        $statsFile = "goose_stats.json"
-        
-        $data = @{
-            "TotalSessions" = $this.AllTimeStats["TotalSessions"]
-            "TotalFocusMinutes" = $this.AllTimeStats["TotalFocusMinutes"]
-            "TotalCommands" = $this.AllTimeStats["TotalCommands"]
-            "FavoriteCommand" = $this.AllTimeStats["FavoriteCommand"]
-            "DaysActive" = $this.AllTimeStats["DaysActive"]
-            "FirstSession" = $this.AllTimeStats["FirstSession"]
-            "LastUpdated" = (Get-Date).ToString("o")
-        }
-        
-        $data | ConvertTo-Json | Set-Content $statsFile
-    }
-    
-    [void] UpdateDailyStats([string]$key, [int]$value) {
-        $dateKey = $this.Today.ToString("yyyy-MM-dd")
-        
-        if (-not $this.DailyStats.ContainsKey($dateKey)) {
-            $this.DailyStats[$dateKey] = @{
-                "FocusMinutes" = 0
-                "CommandsUsed" = 0
-                "Interactions" = 0
-                "PomodoroSessions" = 0
-                "TopApp" = ""
-                "TopAppMinutes" = 0
-            }
-        }
-        
-        switch ($key) {
-            "FocusMinutes" { $this.DailyStats[$dateKey]["FocusMinutes"] += $value }
-            "CommandsUsed" { $this.DailyStats[$dateKey]["CommandsUsed"] += $value }
-            "Interactions" { $this.DailyStats[$dateKey]["Interactions"] += $value }
-            "PomodoroSessions" { $this.DailyStats[$dateKey]["PomodoroSessions"] += $value }
-            "AppTime" { 
-                $this.DailyStats[$dateKey]["TopAppMinutes"] += $value
-                if ($this.DailyStats[$dateKey]["TopAppMinutes"] -gt $value) {
-                    $this.DailyStats[$dateKey]["TopApp"] = $value
-                }
-            }
-        }
-    }
-    
-    [void] RecordFocusSession([int]$minutes) {
-        $this.UpdateDailyStats("FocusMinutes", $minutes)
-        $this.AllTimeStats["TotalFocusMinutes"] += $minutes
-        $this.AllTimeStats["TotalSessions"]++
-        $this.SaveStats()
-    }
-    
-    [void] RecordCommand([string]$command) {
-        $this.UpdateDailyStats("CommandsUsed", 1)
-        $this.AllTimeStats["TotalCommands"]++
-        
-        if ($this.AllTimeStats["FavoriteCommand"] -eq "") {
-            $this.AllTimeStats["FavoriteCommand"] = $command
-        }
-        
-        $this.SaveStats()
-    }
-    
-    [void] RecordInteraction() {
-        $this.UpdateDailyStats("Interactions", 1)
-    }
-    
-    [void] RecordPomodoroSession([int]$minutes) {
-        $this.RecordFocusSession($minutes)
-        $this.UpdateDailyStats("PomodoroSessions", 1)
-    }
-    
-    [void] CheckDayChange() {
-        if ((Get-Date).Date -ne $this.Today) {
-            $oldDate = $this.Today
-            $this.Today = (Get-Date).Date
-            
-            if (-not $this.AllTimeStats["DaysActive"]) {
-                $this.AllTimeStats["DaysActive"] = 1
-            }
-            
-            $this.SaveStats()
-        }
-    }
-    
-    [hashtable] GetTodaySummary() {
-        $this.CheckDayChange()
-        $dateKey = $this.Today.ToString("yyyy-MM-dd")
-        
-        if (-not $this.DailyStats.ContainsKey($dateKey)) {
-            return @{
-                "Date" = $dateKey
-                "FocusMinutes" = 0
-                "CommandsUsed" = 0
-                "Interactions" = 0
-                "PomodoroSessions" = 0
-                "TopApp" = ""
-                "SessionTime" = ((Get-Date) - $this.SessionStart).Minutes
-            }
-        }
-        
-        $stats = $this.DailyStats[$dateKey]
-        
-        return @{
-            "Date" = $dateKey
-            "FocusMinutes" = $stats["FocusMinutes"]
-            "CommandsUsed" = $stats["CommandsUsed"]
-            "Interactions" = $stats["Interactions"]
-            "PomodoroSessions" = $stats["PomodoroSessions"]
-            "TopApp" = $stats["TopApp"]
-            "TopAppMinutes" = $stats["TopAppMinutes"]
-            "SessionTime" = ((Get-Date) - $this.SessionStart).Minutes
-        }
-    }
-    
-    [hashtable] GetAllTimeStats() {
-        return @{
-            "TotalSessions" = $this.AllTimeStats["TotalSessions"]
-            "TotalFocusMinutes" = $this.AllTimeStats["TotalFocusMinutes"]
-            "TotalCommands" = $this.AllTimeStats["TotalCommands"]
-            "FavoriteCommand" = $this.AllTimeStats["FavoriteCommand"]
-            "DaysActive" = $this.AllTimeStats["DaysActive"]
-            "FirstSession" = $this.AllTimeStats["FirstSession"]
-            "AverageFocusPerSession" = if ($this.AllTimeStats["TotalSessions"] -gt 0) { [int]($this.AllTimeStats["TotalFocusMinutes"] / $this.AllTimeStats["TotalSessions"]) } else { 0 }
-        }
-    }
-    
-    [string] GetGooseDailyComment() {
-        $todaySummary = $this.GetTodaySummary()
-        
-        if ($todaySummary["FocusMinutes"] -eq 0) {
-            return "No focus time recorded today. Let's get started!"
-        }
-        
-        if ($todaySummary["PomodoroSessions"] -ge 8) {
-            return "Amazing! $($_['PomodoroSessions']) pomodoro sessions today! You're a focus champion!"
-        }
-        
-        if ($todaySummary["FocusMinutes"] -ge 120) {
-            return "Wow! $($_['FocusMinutes']) minutes of focused work today!"
-        }
-        
-        if ($todaySummary["FocusMinutes"] -ge 60) {
-            return "Great job! You've been focused for over an hour today!"
-        }
-        
-        if ($todaySummary["FocusMinutes"] -ge 30) {
-            return "Nice work! Keep it up!"
-        }
-        
-        return "Good start! Every minute of focus counts!"
-    }
-    
-    [hashtable] GetDashboardData() {
-        return @{
-            "Today" = $this.GetTodaySummary()
-            "AllTime" = $this.GetAllTimeStats()
-            "SessionStart" = $this.SessionStart
-            "GooseComment" = $this.GetGooseDailyComment()
-        }
-    }
-    
-    [string] GenerateDailyReport() {
-        $todaySummary = $this.GetTodaySummary()
-        $allTime = $this.GetAllTimeStats()
-        
-        $report = @"
-=== Daily Goose Report ===
-Date: $($todaySummary['Date'])
+$LoggingScriptPath = Join-Path $PSScriptRoot "..\Core\GooseLogging.ps1"
+if (Test-Path $LoggingScriptPath) {
+    . $LoggingScriptPath
+}
 
-FOCUS TIME
-- Today's Focus: $($todaySummary['FocusMinutes']) minutes
-- Pomodoro Sessions: $($todaySummary['PomodoroSessions'])
-- Session Time: $($todaySummary['SessionTime']) minutes
+$StatsScriptPath = Join-Path $PSScriptRoot "goose-stats.ps1"
+if (Test-Path $StatsScriptPath) {
+    . $StatsScriptPath
+}
 
-INTERACTIONS
-- Commands Used: $($todaySummary['CommandsUsed'])
-- Interactions: $($todaySummary['Interactions'])
+function Load-Stats {
+    $statsFile = Join-Path $PSScriptRoot "goose_stats.json"
+    if (Test-Path $statsFile) {
+        try {
+            return Get-Content $statsFile -Raw | ConvertFrom-Json
+        } catch {
+            return $null
+        }
+    }
+    return $null
+}
 
-ALL-TIME STATS
-- Total Sessions: $($allTime['TotalSessions'])
-- Total Focus: $($allTime['TotalFocusMinutes']) minutes
-- Total Commands: $($allTime['TotalCommands'])
-- Days Active: $($allTime['DaysActive'])
-- Favorite Command: $($allTime['FavoriteCommand'])
+$form = New-Object System.Windows.Forms.Form
+$form.Text = "Desktop Goose - Daily Stats Dashboard"
+$form.Size = New-Object System.Drawing.Size(800, 600)
+$form.StartPosition = "CenterScreen"
+$form.BackColor = [System.Drawing.Color]::FromArgb(25, 25, 30)
+$form.FormBorderStyle = "FixedDialog"
+$form.MaximizeBox = $false
 
-$($this.GetGooseDailyComment())
-"@
+$titleLabel = New-Object System.Windows.Forms.Label
+$titleLabel.Text = "Daily Stats Dashboard"
+$titleLabel.Font = New-Object System.Drawing.Font("Segoe UI", 18, [System.Drawing.FontStyle]::Bold)
+$titleLabel.Location = New-Object System.Drawing.Point(20, 20)
+$titleLabel.Size = New-Object System.Drawing.Size(350, 35)
+$titleLabel.ForeColor = [System.Drawing.Color]::White
+$form.Controls.Add($titleLabel)
+
+$gooseEmoji = New-Object System.Windows.Forms.Label
+$gooseEmoji.Text = "🦆"
+$gooseEmoji.Font = New-Object System.Drawing.Font("Segoe UI", 30)
+$gooseEmoji.Location = New-Object System.Drawing.Point(700, 15)
+$gooseEmoji.Size = New-Object System.Drawing.Size(60, 50)
+$gooseEmoji.ForeColor = [System.Drawing.Color]::White
+$form.Controls.Add($gooseEmoji)
+
+$todayGroup = New-Object System.Windows.Forms.GroupBox
+$todayGroup.Text = "Today's Progress"
+$todayGroup.Location = New-Object System.Drawing.Point(20, 70)
+$todayGroup.Size = New-Object System.Drawing.Size(350, 200)
+$todayGroup.ForeColor = [System.Drawing.Color]::White
+$todayGroup.BackColor = [System.Drawing.Color]::FromArgb(35, 35, 40)
+$form.Controls.Add($todayGroup)
+
+$lblFocusTime = New-Object System.Windows.Forms.Label
+$lblFocusTime.Text = "Focus Time:"
+$lblFocusTime.Location = New-Object System.Drawing.Point(20, 30)
+$lblFocusTime.Size = New-Object System.Drawing.Size(120, 25)
+$lblFocusTime.ForeColor = [System.Drawing.Color]::LightGray
+$todayGroup.Controls.Add($lblFocusTime)
+
+$lblFocusValue = New-Object System.Windows.Forms.Label
+$lblFocusValue.Text = "0 minutes"
+$lblFocusValue.Location = New-Object System.Drawing.Point(150, 30)
+$lblFocusValue.Size = New-Object System.Drawing.Size(100, 25)
+$lblFocusValue.ForeColor = [System.Drawing.Color]::Lime
+$lblFocusValue.Font = New-Object System.Drawing.Font("Segoe UI", 10, [System.Drawing.FontStyle]::Bold)
+$todayGroup.Controls.Add($lblFocusValue)
+
+$lblCommands = New-Object System.Windows.Forms.Label
+$lblCommands.Text = "Commands Used:"
+$lblCommands.Location = New-Object System.Drawing.Point(20, 60)
+$lblCommands.Size = New-Object System.Drawing.Size(120, 25)
+$lblCommands.ForeColor = [System.Drawing.Color]::LightGray
+$todayGroup.Controls.Add($lblCommands)
+
+$lblCommandsValue = New-Object System.Windows.Forms.Label
+$lblCommandsValue.Text = "0"
+$lblCommandsValue.Location = New-Object System.Drawing.Point(150, 60)
+$lblCommandsValue.Size = New-Object System.Drawing.Size(100, 25)
+$lblCommandsValue.ForeColor = [System.Drawing.Color]::Cyan
+$lblCommandsValue.Font = New-Object System.Drawing.Font("Segoe UI", 10, [System.Drawing.FontStyle]::Bold)
+$todayGroup.Controls.Add($lblCommandsValue)
+
+$lblInteractions = New-Object System.Windows.Forms.Label
+$lblInteractions.Text = "Interactions:"
+$lblInteractions.Location = New-Object System.Drawing.Point(20, 90)
+$lblInteractions.Size = New-Object System.Drawing.Size(120, 25)
+$lblInteractions.ForeColor = [System.Drawing.Color]::LightGray
+$todayGroup.Controls.Add($lblInteractions)
+
+$lblInteractionsValue = New-Object System.Windows.Forms.Label
+$lblInteractionsValue.Text = "0"
+$lblInteractionsValue.Location = New-Object System.Drawing.Point(150, 90)
+$lblInteractionsValue.Size = New-Object System.Drawing.Size(100, 25)
+$lblInteractionsValue.ForeColor = [System.Drawing.Color]::Orange
+$lblInteractionsValue.Font = New-Object System.Drawing.Font("Segoe UI", 10, [System.Drawing.FontStyle]::Bold)
+$todayGroup.Controls.Add($lblInteractionsValue)
+
+$lblPomodoro = New-Object System.Windows.Forms.Label
+$lblPomodoro.Text = "Pomodoro Sessions:"
+$lblPomodoro.Location = New-Object System.Drawing.Point(20, 120)
+$lblPomodoro.Size = New-Object System.Drawing.Size(130, 25)
+$lblPomodoro.ForeColor = [System.Drawing.Color]::LightGray
+$todayGroup.Controls.Add($lblPomodoro)
+
+$lblPomodoroValue = New-Object System.Windows.Forms.Label
+$lblPomodoroValue.Text = "0"
+$lblPomodoroValue.Location = New-Object System.Drawing.Point(150, 120)
+$lblPomodoroValue.Size = New-Object System.Drawing.Size(100, 25)
+$lblPomodoroValue.ForeColor = [System.Drawing.Color]::Yellow
+$lblPomodoroValue.Font = New-Object System.Drawing.Font("Segoe UI", 10, [System.Drawing.FontStyle]::Bold)
+$todayGroup.Controls.Add($lblPomodoroValue)
+
+$lblSession = New-Object System.Windows.Forms.Label
+$lblSession.Text = "Session Time:"
+$lblSession.Location = New-Object System.Drawing.Point(20, 150)
+$lblSession.Size = New-Object System.Drawing.Size(120, 25)
+$lblSession.ForeColor = [System.Drawing.Color]::LightGray
+$todayGroup.Controls.Add($lblSession)
+
+$lblSessionValue = New-Object System.Windows.Forms.Label
+$lblSessionValue.Text = "0 min"
+$lblSessionValue.Location = New-Object System.Drawing.Point(150, 150)
+$lblSessionValue.Size = New-Object System.Drawing.Size(100, 25)
+$lblSessionValue.ForeColor = [System.Drawing.Color]::Magenta
+$lblSessionValue.Font = New-Object System.Drawing.Font("Segoe UI", 10, [System.Drawing.FontStyle]::Bold)
+$todayGroup.Controls.Add($lblSessionValue)
+
+$allTimeGroup = New-Object System.Windows.Forms.GroupBox
+$allTimeGroup.Text = "All-Time Statistics"
+$allTimeGroup.Location = New-Object System.Drawing.Point(390, 70)
+$allTimeGroup.Size = New-Object System.Drawing.Size(350, 200)
+$allTimeGroup.ForeColor = [System.Drawing.Color]::White
+$allTimeGroup.BackColor = [System.Drawing.Color]::FromArgb(35, 35, 40)
+$form.Controls.Add($allTimeGroup)
+
+$lblTotalSessions = New-Object System.Windows.Forms.Label
+$lblTotalSessions.Text = "Total Sessions:"
+$lblTotalSessions.Location = New-Object System.Drawing.Point(20, 30)
+$lblTotalSessions.Size = New-Object System.Drawing.Size(140, 25)
+$lblTotalSessions.ForeColor = [System.Drawing.Color]::LightGray
+$allTimeGroup.Controls.Add($lblTotalSessions)
+
+$lblTotalSessionsValue = New-Object System.Windows.Forms.Label
+$lblTotalSessionsValue.Text = "0"
+$lblTotalSessionsValue.Location = New-Object System.Drawing.Point(170, 30)
+$lblTotalSessionsValue.Size = New-Object System.Drawing.Size(100, 25)
+$lblTotalSessionsValue.ForeColor = [System.Drawing.Color]::Lime
+$lblTotalSessionsValue.Font = New-Object System.Drawing.Font("Segoe UI", 10, [System.Drawing.FontStyle]::Bold)
+$allTimeGroup.Controls.Add($lblTotalSessionsValue)
+
+$lblTotalFocus = New-Object System.Windows.Forms.Label
+$lblTotalFocus.Text = "Total Focus Minutes:"
+$lblTotalFocus.Location = New-Object System.Drawing.Point(20, 60)
+$lblTotalFocus.Size = New-Object System.Drawing.Size(140, 25)
+$lblTotalFocus.ForeColor = [System.Drawing.Color]::LightGray
+$allTimeGroup.Controls.Add($lblTotalFocus)
+
+$lblTotalFocusValue = New-Object System.Windows.Forms.Label
+$lblTotalFocusValue.Text = "0"
+$lblTotalFocusValue.Location = New-Object System.Drawing.Point(170, 60)
+$lblTotalFocusValue.Size = New-Object System.Drawing.Size(100, 25)
+$lblTotalFocusValue.ForeColor = [System.Drawing.Color]::Cyan
+$lblTotalFocusValue.Font = New-Object System.Drawing.Font("Segoe UI", 10, [System.Drawing.FontStyle]::Bold)
+$allTimeGroup.Controls.Add($lblTotalFocusValue)
+
+$lblTotalCommands = New-Object System.Windows.Forms.Label
+$lblTotalCommands.Text = "Total Commands:"
+$lblTotalCommands.Location = New-Object System.Drawing.Point(20, 90)
+$lblTotalCommands.Size = New-Object System.Drawing.Size(140, 25)
+$lblTotalCommands.ForeColor = [System.Drawing.Color]::LightGray
+$allTimeGroup.Controls.Add($lblTotalCommands)
+
+$lblTotalCommandsValue = New-Object System.Windows.Forms.Label
+$lblTotalCommandsValue.Text = "0"
+$lblTotalCommandsValue.Location = New-Object System.Drawing.Point(170, 90)
+$lblTotalCommandsValue.Size = New-Object System.Drawing.Size(100, 25)
+$lblTotalCommandsValue.ForeColor = [System.Drawing.Color]::Orange
+$lblTotalCommandsValue.Font = New-Object System.Drawing.Font("Segoe UI", 10, [System.Drawing.FontStyle]::Bold)
+$allTimeGroup.Controls.Add($lblTotalCommandsValue)
+
+$lblFavorite = New-Object System.Windows.Forms.Label
+$lblFavorite.Text = "Favorite Command:"
+$lblFavorite.Location = New-Object System.Drawing.Point(20, 120)
+$lblFavorite.Size = New-Object System.Drawing.Size(140, 25)
+$lblFavorite.ForeColor = [System.Drawing.Color]::LightGray
+$allTimeGroup.Controls.Add($lblFavorite)
+
+$lblFavoriteValue = New-Object System.Windows.Forms.Label
+$lblFavoriteValue.Text = "-"
+$lblFavoriteValue.Location = New-Object System.Drawing.Point(170, 120)
+$lblFavoriteValue.Size = New-Object System.Drawing.Size(150, 25)
+$lblFavoriteValue.ForeColor = [System.Drawing.Color]::Yellow
+$lblFavoriteValue.Font = New-Object System.Drawing.Font("Segoe UI", 10, [System.Drawing.FontStyle]::Bold)
+$allTimeGroup.Controls.Add($lblFavoriteValue)
+
+$lblDaysActive = New-Object System.Windows.Forms.Label
+$lblDaysActive.Text = "Days Active:"
+$lblDaysActive.Location = New-Object System.Drawing.Point(20, 150)
+$lblDaysActive.Size = New-Object System.Drawing.Size(140, 25)
+$lblDaysActive.ForeColor = [System.Drawing.Color]::LightGray
+$allTimeGroup.Controls.Add($lblDaysActive)
+
+$lblDaysActiveValue = New-Object System.Windows.Forms.Label
+$lblDaysActiveValue.Text = "0"
+$lblDaysActiveValue.Location = New-Object System.Drawing.Point(170, 150)
+$lblDaysActiveValue.Size = New-Object System.Drawing.Size(100, 25)
+$lblDaysActiveValue.ForeColor = [System.Drawing.Color]::Magenta
+$lblDaysActiveValue.Font = New-Object System.Drawing.Font("Segoe UI", 10, [System.Drawing.FontStyle]::Bold)
+$allTimeGroup.Controls.Add($lblDaysActiveValue)
+
+$commentGroup = New-Object System.Windows.Forms.GroupBox
+$commentGroup.Text = "Goose Comment"
+$commentGroup.Location = New-Object System.Drawing.Point(20, 290)
+$commentGroup.Size = New-Object System.Drawing.Size(720, 150)
+$commentGroup.ForeColor = [System.Drawing.Color]::White
+$commentGroup.BackColor = [System.Drawing.Color]::FromArgb(35, 35, 40)
+$form.Controls.Add($commentGroup)
+
+$lblComment = New-Object System.Windows.Forms.Label
+$lblComment.Text = "No focus time recorded today. Let's get started!"
+$lblComment.Location = New-Object System.Drawing.Point(20, 30)
+$lblComment.Size = New-Object System.Drawing.Size(680, 100)
+$lblComment.Font = New-Object System.Drawing.Font("Segoe UI", 14)
+$lblComment.ForeColor = [System.Drawing.Color]::LightGreen
+$lblComment.TextAlign = "MiddleCenter"
+$commentGroup.Controls.Add($lblComment)
+
+$btnRefresh = New-Object System.Windows.Forms.Button
+$btnRefresh.Text = "Refresh Stats"
+$btnRefresh.Location = New-Object System.Drawing.Point(20, 460)
+$btnRefresh.Size = New-Object System.Drawing.Size(120, 35)
+$btnRefresh.BackColor = [System.Drawing.Color]::FromArgb(0, 120, 215)
+$btnRefresh.ForeColor = [System.Drawing.Color]::White
+$btnRefresh.FlatStyle = "Flat"
+$btnRefresh.Font = New-Object System.Drawing.Font("Segoe UI", 10)
+$form.Controls.Add($btnRefresh)
+
+$btnExport = New-Object System.Windows.Forms.Button
+$btnExport.Text = "Export Report"
+$btnExport.Location = New-Object System.Drawing.Point(160, 460)
+$btnExport.Size = New-Object System.Drawing.Size(120, 35)
+$btnExport.BackColor = [System.Drawing.Color]::FromArgb(100, 100, 105)
+$btnExport.ForeColor = [System.Drawing.Color]::White
+$btnExport.FlatStyle = "Flat"
+$btnExport.Font = New-Object System.Drawing.Font("Segoe UI", 10)
+$form.Controls.Add($btnExport)
+
+$btnClose = New-Object System.Windows.Forms.Button
+$btnClose.Text = "Close"
+$btnClose.Location = New-Object System.Drawing.Point(620, 460)
+$btnClose.Size = New-Object System.Drawing.Size(120, 35)
+$btnClose.BackColor = [System.Drawing.Color]::FromArgb(180, 60, 60)
+$btnClose.ForeColor = [System.Drawing.Color]::White
+$btnClose.FlatStyle = "Flat"
+$btnClose.Font = New-Object System.Drawing.Font("Segoe UI", 10)
+$form.Controls.Add($btnClose)
+
+function Update-Stats-Display {
+    $stats = Load-Stats
+    
+    if ($stats) {
+        $lblTotalSessionsValue.Text = $stats.TotalSessions
+        $lblTotalFocusValue.Text = "$($stats.TotalFocusMinutes) min"
+        $lblTotalCommandsValue.Text = $stats.TotalCommands
+        $lblFavoriteValue.Text = if ($stats.FavoriteCommand) { "!$($stats.FavoriteCommand)" } else { "-" }
+        $lblDaysActiveValue.Text = $stats.DaysActive
+    }
+    
+    try {
+        $dashboard = Get-DashboardData
+        $today = $dashboard.Today
+        $allTime = $dashboard.AllTime
         
-        return $report
-    }
-    
-    [void] SyncFromCloud([object]$cloudData) {
-        if ($cloudData) {
-            if ($cloudData.TotalSessions) { $this.AllTimeStats["TotalSessions"] = $cloudData.TotalSessions }
-            if ($cloudData.TotalFocusMinutes) { $this.AllTimeStats["TotalFocusMinutes"] = $cloudData.TotalFocusMinutes }
-            if ($cloudData.TotalCommands) { $this.AllTimeStats["TotalCommands"] = $cloudData.TotalCommands }
-            if ($cloudData.FavoriteCommand) { $this.AllTimeStats["FavoriteCommand"] = $cloudData.FavoriteCommand }
-            if ($cloudData.DaysActive) { $this.AllTimeStats["DaysActive"] = $cloudData.DaysActive }
-            $this.SaveStats()
-        }
-    }
-    
-    [object] GetStatsForSync() {
-        return @{
-            "TotalSessions" = $this.AllTimeStats["TotalSessions"]
-            "TotalFocusMinutes" = $this.AllTimeStats["TotalFocusMinutes"]
-            "TotalCommands" = $this.AllTimeStats["TotalCommands"]
-            "FavoriteCommand" = $this.AllTimeStats["FavoriteCommand"]
-            "DaysActive" = $this.AllTimeStats["DaysActive"]
-            "FirstSession" = $this.AllTimeStats["FirstSession"]
-        }
+        $lblFocusValue.Text = "$($today.FocusMinutes) min"
+        $lblCommandsValue.Text = $today.CommandsUsed
+        $lblInteractionsValue.Text = $today.Interactions
+        $lblPomodoroValue.Text = $today.PomodoroSessions
+        $lblSessionValue.Text = "$($today.SessionTime) min"
+        
+        $lblComment.Text = $dashboard.GooseComment
+    } catch {
     }
 }
 
-# Initialize stats dashboard
-$gooseStatsDashboard = [GooseStatsDashboard]::new()
+$btnRefresh.Add_Click({
+    Update-Stats-Display
+})
 
-# Export functions
-function Get-GooseStatsDashboard {
-    return $gooseStatsDashboard
-}
-
-function Get-DailySummary {
-    param($Dashboard = $gooseStatsDashboard)
-    return $Dashboard.GetTodaySummary()
-}
-
-function Get-AllTimeStats {
-    param($Dashboard = $gooseStatsDashboard)
-    return $Dashboard.GetAllTimeStats()
-}
-
-function Get-DashboardData {
-    param($Dashboard = $gooseStatsDashboard)
-    return $Dashboard.GetDashboardData()
-}
-
-function Get-DailyReport {
-    param($Dashboard = $gooseStatsDashboard)
-    return $Dashboard.GenerateDailyReport()
-}
-
-function Record-FocusSession {
-    param(
-        [int]$Minutes,
-        $Dashboard = $gooseStatsDashboard
-    )
-    $Dashboard.RecordFocusSession($Minutes)
-}
-
-function Record-GooseCommand {
-    param(
-        [string]$Command,
-        $Dashboard = $gooseStatsDashboard
-    )
-    $Dashboard.RecordCommand($Command)
-}
-
-function Sync-GooseStats {
-    param(
-        [object]$SyncClient,
-        $Dashboard = $gooseStatsDashboard
-    )
-    
-    $pullResult = $SyncClient.PullData("stats")
-    
-    if ($pullResult.Success -and $pullResult.Source -eq "remote") {
-        $Dashboard.SyncFromCloud($pullResult.Data)
-        return @{
-            "Success" = $true
-            "Synced" = $true
-            "Source" = "cloud"
-        }
+$btnExport.Add_Click({
+    try {
+        $report = Get-DailyReport
+        $savePath = Join-Path $PSScriptRoot "goose_report_$(Get-Date -Format 'yyyyMMdd_HHmmss').txt"
+        $report | Out-File -FilePath $savePath -Encoding UTF8
+        [System.Windows.Forms.MessageBox]::Show("Report exported to:`n$savePath", "Export Complete", [System.Windows.Forms.MessageBoxButtons]::OK, [System.Windows.Forms.MessageBoxIcon]::Information)
+    } catch {
+        [System.Windows.Forms.MessageBox]::Show("Failed to export report.", "Error", [System.Windows.Forms.MessageBoxButtons]::OK, [System.Windows.Forms.MessageBoxIcon]::Error)
     }
-    
-    $syncResult = $SyncClient.QueueChange("stats", "Update", $Dashboard.GetStatsForSync())
-    
-    return @{
-        "Success" = $true
-        "Synced" = $false
-        "Queued" = $true
-    }
-}
+})
 
-Write-Host "Desktop Goose Stats Dashboard Initialized"
-$dashboard = Get-DashboardData
-Write-Host "Today's Focus: $($dashboard.Today.FocusMinutes) minutes"
+$btnClose.Add_Click({
+    $form.Close()
+})
+
+$form.Add_Load({
+    Update-Stats-Display
+})
+
+[void]$form.ShowDialog()
