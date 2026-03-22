@@ -117,6 +117,17 @@ Desktop Goose kann mit einem Self-Hosted Supabase Backend erweitert werden:
    - Alternatively, run `run.bat` for a minimized window launch
    - Or directly execute `GooseDesktop.exe`
 
+> **⚠️ Antivirus Warning**
+> 
+> Some antivirus programs may flag GooseDesktop as a potential threat (currently detected by ~6/72 security vendors as `pua.goosedesktop/joke` or similar).
+> 
+> **Important:** The original executable (`GooseDesktop.exe`) is not open source, so we cannot verify its full behavior. Use this application at your own discretion.
+> 
+> If your antivirus blocks GooseDesktop:
+> - Add an exclusion for the GooseDesktop folder
+> - Report the false positive to your antivirus vendor
+> - Check the [VirusTotal report](https://www.virustotal.com/gui/file/943fd1ea44266c5d7fa02f2b292db095a4e6ba8027a1f6c73fd60d1165e63aff) before running
+
 ## ⚙️ Configuration
 
 The goose behavior can be customized by editing `config.ini`:

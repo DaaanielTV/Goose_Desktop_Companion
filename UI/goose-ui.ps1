@@ -151,6 +151,17 @@ function Create-SectionLabel {
 
 $config = Load-Config
 
+$result = [System.Windows.Forms.MessageBox]::Show(
+    "GooseDesktop may be flagged by some antivirus programs. The original executable is not open source, so we cannot verify its full behavior.`n`nCurrent detection rate: ~6/72 security vendors (pua.goosedesktop/joke).`n`nDo you want to continue?",
+    "Antivirus Warning",
+    [System.Windows.Forms.MessageBoxButtons]::YesNo,
+    [System.Windows.Forms.MessageBoxIcon]::Warning
+)
+
+if ($result -eq [System.Windows.Forms.DialogResult]::No) {
+    exit
+}
+
 $form = New-Object System.Windows.Forms.Form
 $form.Text = "Desktop Goose Control Center"
 $form.Size = New-Object System.Drawing.Size(950, 700)
@@ -229,9 +240,50 @@ $lblStatus.Font = New-Object System.Drawing.Font("Segoe UI", 12)
 $lblStatus.ForeColor = [System.Drawing.Color]::Gray
 $tabHome.Controls.Add($lblStatus)
 
+$avWarningPanel = New-Object System.Windows.Forms.Panel
+$avWarningPanel.Location = New-Object System.Drawing.Point(20, 100)
+$avWarningPanel.Size = New-Object System.Drawing.Size(870, 80)
+$avWarningPanel.BackColor = [System.Drawing.Color]::FromArgb(80, 50, 50)
+$avWarningPanel.BorderStyle = [System.Windows.Forms.BorderStyle]::FixedSingle
+$tabHome.Controls.Add($avWarningPanel)
+
+$avWarningIcon = New-Object System.Windows.Forms.Label
+$avWarningIcon.Text = "⚠️"
+$avWarningIcon.Location = New-Object System.Drawing.Point(15, 15)
+$avWarningIcon.Size = New-Object System.Drawing.Size(30, 30)
+$avWarningIcon.Font = New-Object System.Drawing.Font("Segoe UI", 18)
+$avWarningPanel.Controls.Add($avWarningIcon)
+
+$avWarningTitle = New-Object System.Windows.Forms.Label
+$avWarningTitle.Text = "Antivirus Notice"
+$avWarningTitle.Location = New-Object System.Drawing.Point(50, 10)
+$avWarningTitle.Size = New-Object System.Drawing.Size(200, 25)
+$avWarningTitle.Font = New-Object System.Drawing.Font("Segoe UI", 10, [System.Drawing.FontStyle]::Bold)
+$avWarningTitle.ForeColor = [System.Drawing.Color]::FromArgb(255, 200, 100)
+$avWarningPanel.Controls.Add($avWarningTitle)
+
+$avWarningText = New-Object System.Windows.Forms.Label
+$avWarningText.Text = "GooseDesktop may be flagged by ~6/72 antivirus programs (pua.goosedesktop/joke). The original executable is not open source. Use at your own discretion."
+$avWarningText.Location = New-Object System.Drawing.Point(50, 35)
+$avWarningText.Size = New-Object System.Drawing.Size(800, 20)
+$avWarningText.Font = New-Object System.Drawing.Font("Segoe UI", 9)
+$avWarningText.ForeColor = [System.Drawing.Color]::LightGray
+$avWarningPanel.Controls.Add($avWarningText)
+
+$avWarningLink = New-Object System.Windows.Forms.LinkLabel
+$avWarningLink.Text = "View VirusTotal Report"
+$avWarningLink.Location = New-Object System.Drawing.Point(50, 55)
+$avWarningLink.Size = New-Object System.Drawing.Size(150, 20)
+$avWarningLink.Font = New-Object System.Drawing.Font("Segoe UI", 9)
+$avWarningLink.LinkColor = [System.Drawing.Color]::FromArgb(100, 150, 255)
+$avWarningLink.add_LinkClicked({
+    Start-Process "https://www.virustotal.com/gui/file/943fd1ea44266c5d7fa02f2b292db095a4e6ba8027a1f6c73fd60d1165e63aff"
+})
+$avWarningPanel.Controls.Add($avWarningLink)
+
 $gooseGroup = New-Object System.Windows.Forms.GroupBox
 $gooseGroup.Text = "Goose Count"
-$gooseGroup.Location = New-Object System.Drawing.Point(20, 110)
+$gooseGroup.Location = New-Object System.Drawing.Point(20, 200)
 $gooseGroup.Size = New-Object System.Drawing.Size(400, 80)
 $gooseGroup.ForeColor = [System.Drawing.Color]::White
 $gooseGroup.BackColor = [System.Drawing.Color]::FromArgb(50, 50, 55)
