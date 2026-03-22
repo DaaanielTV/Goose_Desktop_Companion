@@ -153,6 +153,40 @@ class GooseConfig:
             'ipc_timeout': self.get_int('POWERSHELL', 'ipc_timeout', 5000),
         }
 
+
+    @property
+    def app_state_dir(self) -> Path:
+        """Get the directory for persisted application state."""
+        state_dir = Path.home() / ".goose_desktop_companion"
+        state_dir.mkdir(parents=True, exist_ok=True)
+        return state_dir
+
+    @property
+    def onboarding_state_path(self) -> Path:
+        """Get the path for persisted onboarding state."""
+        return self.app_state_dir / "onboarding_state.json"
+
+    def should_show_onboarding(self) -> bool:
+        """Return True when onboarding has not been completed yet."""
+        state_path = self.onboarding_state_path
+        if not state_path.exists():
+            return True
+
+        try:
+            state = json.loads(state_path.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError) as exc:
+            logger.warning(f"Failed to read onboarding state from {state_path}: {exc}")
+            return True
+
+        return not state.get("completed", False)
+
+    def mark_onboarding_completed(self):
+        """Persist onboarding completion so it is only shown once."""
+        state_path = self.onboarding_state_path
+        state = {"completed": True}
+        state_path.write_text(json.dumps(state, indent=2), encoding="utf-8")
+        logger.info(f"Stored onboarding completion in {state_path}")
+
     @property
     def debug_config(self) -> Dict[str, bool]:
         """Get debug configuration"""

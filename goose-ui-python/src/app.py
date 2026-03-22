@@ -14,7 +14,7 @@ import sys
 from pathlib import Path
 from typing import Optional
 
-from PyQt5.QtWidgets import QApplication
+from PyQt5.QtWidgets import QApplication, QMessageBox
 from PyQt5.QtCore import Qt
 
 from .config import get_config, GooseConfig
@@ -98,12 +98,40 @@ class GooseApplication:
             # Start animation loop
             framerate = ui_config.get('framerate', 60)
             self.main_window.start_animation_loop(framerate)
+
+            if self.config.should_show_onboarding() and self.main_window:
+                self._show_onboarding()
             
             logger.info("Application setup complete")
             return True
         except Exception as e:
             logger.error(f"Failed to setup application: {e}", exc_info=True)
             return False
+
+
+    def _show_onboarding(self):
+        """Display a first-run onboarding dialog and persist completion."""
+        if not self.main_window:
+            return
+
+        message_box = QMessageBox(self.main_window)
+        message_box.setWindowTitle("Welcome to Goose Desktop Companion")
+        message_box.setIcon(QMessageBox.Information)
+        message_box.setText("Your goose is ready to explore your desktop.")
+        message_box.setInformativeText(
+            "This onboarding is only shown once.\n\n"
+            "• Drag the goose with the left mouse button.\n"
+            "• Double-click to trigger a happy bounce.\n"
+            "• Press Space to cycle through moods.\n"
+            "• Press Esc anytime to close the companion."
+        )
+        message_box.setStandardButtons(QMessageBox.Ok)
+        message_box.exec()
+
+        try:
+            self.config.mark_onboarding_completed()
+        except OSError as exc:
+            logger.warning(f"Failed to persist onboarding completion: {exc}")
 
     def run(self):
         """Run the application"""
