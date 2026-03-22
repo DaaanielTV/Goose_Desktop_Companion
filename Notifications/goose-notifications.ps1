@@ -249,7 +249,30 @@ class GooseNotificationsClient {
         }
     }
 
+    [bool] ValidateWebhookUrl([string]$url) {
+        try {
+            $uri = [System.Uri]::new($url)
+            if ($uri.Scheme -ne "https") {
+                return $false
+            }
+            $blockedHosts = @("localhost", "127.0.0.1", "0.0.0.0", "::1")
+            if ($blockedHosts -contains $uri.Host) {
+                return $false
+            }
+            return $true
+        } catch {
+            return $false
+        }
+    }
+
     [hashtable] AddWebhook([string]$name, [string]$url, [string[]]$events) {
+        if (-not $this.ValidateWebhookUrl($url)) {
+            return @{
+                "Success" = $false
+                "Error" = "Invalid webhook URL. Must use HTTPS and cannot target localhost/internal addresses."
+            }
+        }
+        
         $endpoint = "$($this.SupabaseUrl)/rest/v1/webhooks"
 
         $headers = @{
@@ -259,7 +282,10 @@ class GooseNotificationsClient {
             "Prefer" = "return=minimal"
         }
 
-        $secret = [guid]::NewGuid().ToString()
+        $secretBytes = New-Object byte[] 32
+        $rng = [System.Security.Cryptography.RandomNumberGenerator]::Create()
+        $rng.GetBytes($secretBytes)
+        $secret = [Convert]::ToBase64String($secretBytes)
 
         $body = @{
             "user_id" = $this.DeviceId

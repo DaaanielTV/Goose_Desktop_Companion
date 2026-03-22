@@ -204,9 +204,29 @@ class GooseFileOrganizer {
         }
         
         $rule = $this.Rules[$ruleName]
-        $basePath = [Environment]::GetFolderPath($rule.destination)
         
-        if (-not (Test-Path $basePath)) {
+        if ($rule.destination -match '\.\.[/\\]') {
+            return $null
+        }
+        
+        $allowedDestinations = @("MyPictures", "MyDocuments", "MyMusic", "MyVideos", "Desktop", "Documents", "Pictures", "Music", "Videos")
+        
+        $destFolder = $rule.destination
+        foreach ($allowed in $allowedDestinations) {
+            $resolvedPath = [Environment]::GetFolderPath($allowed)
+            if ($rule.destination -eq $allowed -or $rule.destination.StartsWith("$allowed\")) {
+                $destFolder = $allowed
+                break
+            }
+        }
+        
+        $basePath = [Environment]::GetFolderPath($destFolder)
+        
+        if ($basePath -and $rule.destination -ne $destFolder) {
+            $basePath = Join-Path $basePath ($rule.destination -replace "^$destFolder[/\\]", "")
+        }
+        
+        if (-not $basePath -or -not (Test-Path $basePath)) {
             try {
                 New-Item -ItemType Directory -Path $basePath -Force | Out-Null
             } catch {

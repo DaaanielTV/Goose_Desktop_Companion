@@ -157,8 +157,11 @@ class GooseMultiplayer {
     [string] GenerateConnectionCode() {
         $chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"
         $code = ""
+        $rng = [System.Security.Cryptography.RandomNumberGenerator]::Create()
+        $bytes = New-Object byte[] 1
         for ($i = 0; $i -lt 6; $i++) {
-            $code += $chars[(Get-Random -Maximum $chars.Length)]
+            $rng.GetBytes($bytes)
+            $code += $chars[$bytes[0] % $chars.Length]
         }
         return $code
     }

@@ -239,9 +239,8 @@ class GooseAutomation {
                     }
                     "run_script" {
                         if ($action.script) {
-                            Invoke-Expression $action.script
-                            $actionResult.success = $true
-                            $actionResult.message = "Script executed"
+                            $actionResult.message = "Script execution disabled for security"
+                            $actionResult.success = $false
                         }
                     }
                     "open_app" {
